@@ -1,0 +1,52 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: company-postgres
+    environment:
+      POSTGRES_USER: company
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+      POSTGRES_DB: company
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U company -d company"]
+      interval: 5s
+      timeout: 10s
+      retries: 5
+    networks:
+      - company-network
+
+  api:
+    build:
+      context: .
+      dockerfile: packages/api/Dockerfile
+    container_name: company-api
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://company:${POSTGRES_PASSWORD:-changeme}@postgres:5432/company
+      NODE_ENV: ${NODE_ENV:-production}
+      PORT: 3000
+      API_KEY_SALT: ${API_KEY_SALT:-changeme-salt}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:-0000000000000000000000000000000000000000000000000000000000000000}
+    ports:
+      - "3000:3000"
+    networks:
+      - company-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3000/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  pgdata:
+
+networks:
+  company-network:
+    driver: bridge

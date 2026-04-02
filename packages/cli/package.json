@@ -1,0 +1,32 @@
+{
+  "name": "@company/cli",
+  "version": "0.1.0",
+  "bin": {
+    "company": "dist/cli.js"
+  },
+  "scripts": {
+    "dev": "tsx src/cli.ts",
+    "build": "tsc && chmod +x dist/cli.js",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@company/shared": "workspace:*",
+    "commander": "^12.0.0",
+    "chalk": "^5.3.0",
+    "ora": "^8.0.1",
+    "inquirer": "^9.2.14",
+    "node-fetch": "^3.3.2",
+    "conf": "^13.0.0",
+    "dotenv": "^16.4.0",
+    "pg": "^8.11.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/pg": "^8.11.0",
+    "tsx": "^4.7.0",
+    "typescript": "^5.4.0",
+    "vitest": "^1.4.0"
+  },
+  "type": "module"
+}

@@ -1,0 +1,29 @@
+{
+  "name": "@company/db",
+  "version": "0.1.0",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:push": "drizzle-kit push",
+    "db:studio": "drizzle-kit studio",
+    "generate": "drizzle-kit generate",
+    "migrate": "tsx src/migrate.ts",
+    "studio": "drizzle-kit studio"
+  },
+  "dependencies": {
+    "drizzle-orm": "^0.30.0",
+    "dotenv": "^16.4.0",
+    "pg": "^8.11.0"
+  },
+  "devDependencies": {
+    "@types/pg": "^8.11.0",
+    "drizzle-kit": "^0.20.0",
+    "dotenv": "^16.4.0",
+    "tsx": "^4.7.0",
+    "typescript": "^5.4.0"
+  }
+}

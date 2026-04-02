@@ -1,0 +1,57 @@
+import { clsx } from 'clsx';
+
+type AlertVariant = 'success' | 'warning' | 'danger' | 'info';
+
+interface AlertProps {
+  variant?: AlertVariant;
+  title?: string;
+  message: string;
+  onClose?: () => void;
+  icon?: React.ReactNode;
+}
+
+export function Alert({
+  variant = 'info',
+  title,
+  message,
+  onClose,
+  icon,
+}: AlertProps) {
+  const variants: Record<AlertVariant, string> = {
+    success: 'bg-emerald-900/30 border-emerald-700 text-emerald-200',
+    warning: 'bg-amber-900/30 border-amber-700 text-amber-200',
+    danger: 'bg-red-900/30 border-red-700 text-red-200',
+    info: 'bg-sky-900/30 border-sky-700 text-sky-200',
+  };
+
+  const iconMap = {
+    success: '✓',
+    warning: '⚠',
+    danger: '✕',
+    info: 'ℹ',
+  };
+
+  return (
+    <div
+      className={clsx('flex gap-3 rounded-lg border px-4 py-3', variants[variant])}
+      role="alert"
+    >
+      <span className="flex-shrink-0 text-lg" aria-hidden="true">
+        {icon || iconMap[variant]}
+      </span>
+      <div className="flex-1">
+        {title && <h4 className="font-semibold text-sm">{title}</h4>}
+        <p className="text-sm">{message}</p>
+      </div>
+      {onClose && (
+        <button
+          onClick={onClose}
+          className="flex-shrink-0 text-lg hover:opacity-70 transition-opacity"
+          aria-label="アラートを閉じる"
+        >
+          ✕
+        </button>
+      )}
+    </div>
+  );
+}

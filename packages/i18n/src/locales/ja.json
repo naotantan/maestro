@@ -1,0 +1,197 @@
+{
+  "common": {
+    "loading": "読み込み中...",
+    "save": "保存",
+    "cancel": "キャンセル",
+    "delete": "削除",
+    "edit": "編集",
+    "create": "作成",
+    "update": "更新",
+    "close": "閉じる",
+    "back": "戻る",
+    "next": "次へ",
+    "previous": "前へ",
+    "search": "検索",
+    "filter": "フィルター",
+    "all": "すべて",
+    "none": "なし",
+    "yes": "はい",
+    "no": "いいえ",
+    "ok": "OK",
+    "error": "エラー",
+    "success": "成功",
+    "warning": "警告",
+    "info": "情報",
+    "required": "必須",
+    "optional": "任意",
+    "actions": "操作",
+    "details": "詳細",
+    "status": "ステータス",
+    "name": "名前",
+    "description": "説明",
+    "createdAt": "作成日時",
+    "updatedAt": "更新日時",
+    "noData": "データがありません",
+    "confirmDelete": "本当に削除しますか？"
+  },
+  "nav": {
+    "dashboard": "ダッシュボード",
+    "agents": "エージェント",
+    "issues": "Issue",
+    "goals": "ゴール",
+    "projects": "プロジェクト",
+    "routines": "ルーティン",
+    "approvals": "承認",
+    "costs": "コスト",
+    "activity": "アクティビティ",
+    "plugins": "プラグイン",
+    "org": "組織",
+    "settings": "設定",
+    "inbox": "受信トレイ",
+    "logout": "ログアウト"
+  },
+  "auth": {
+    "login": "ログイン",
+    "register": "新規登録",
+    "logout": "ログアウト",
+    "email": "メールアドレス",
+    "password": "パスワード",
+    "name": "氏名",
+    "companyName": "企業名",
+    "loginButton": "ログイン",
+    "registerButton": "登録する",
+    "loginTitle": "ログイン",
+    "registerTitle": "新規アカウント登録",
+    "noAccount": "アカウントをお持ちでない方は",
+    "hasAccount": "既にアカウントをお持ちの方は",
+    "forgotPassword": "パスワードを忘れた方",
+    "loginError": "メールアドレスまたはパスワードが正しくありません",
+    "registerError": "登録に失敗しました"
+  },
+  "dashboard": {
+    "title": "ダッシュボード",
+    "welcome": "ようこそ、{{name}}さん",
+    "totalAgents": "総エージェント数",
+    "openIssues": "未解決Issue",
+    "pendingApprovals": "承認待ち",
+    "monthlyCost": "月次コスト",
+    "recentActivity": "最近のアクティビティ",
+    "quickActions": "クイックアクション",
+    "noActivity": "最近のアクティビティはありません"
+  },
+  "agents": {
+    "title": "エージェント",
+    "newAgent": "エージェントを追加",
+    "agentName": "エージェント名",
+    "agentType": "タイプ",
+    "status": "ステータス",
+    "lastHeartbeat": "最終ハートビート",
+    "enabled": "有効",
+    "disabled": "無効",
+    "online": "オンライン",
+    "offline": "オフライン",
+    "noAgents": "エージェントがまだ登録されていません",
+    "createFirst": "最初のエージェントを作成しましょう"
+  },
+  "issues": {
+    "title": "Issue",
+    "newIssue": "Issueを作成",
+    "issueTitle": "タイトル",
+    "priority": "優先度",
+    "assignee": "担当者",
+    "status": {
+      "backlog": "バックログ",
+      "todo": "ToDo",
+      "in_progress": "進行中",
+      "in_review": "レビュー中",
+      "done": "完了",
+      "cancelled": "キャンセル"
+    },
+    "priorities": {
+      "urgent": "緊急",
+      "high": "高",
+      "medium": "中",
+      "low": "低",
+      "no_priority": "優先度なし"
+    },
+    "noIssues": "Issueはありません",
+    "createFirst": "最初のIssueを作成しましょう"
+  },
+  "goals": {
+    "title": "ゴール",
+    "newGoal": "ゴールを作成",
+    "deadline": "期限",
+    "progress": "進捗",
+    "noGoals": "ゴールはまだありません"
+  },
+  "projects": {
+    "title": "プロジェクト",
+    "newProject": "プロジェクトを作成",
+    "noProjects": "プロジェクトはまだありません"
+  },
+  "routines": {
+    "title": "ルーティン",
+    "newRoutine": "ルーティンを作成",
+    "runNow": "今すぐ実行",
+    "lastRun": "最終実行",
+    "noRoutines": "ルーティンはまだありません"
+  },
+  "approvals": {
+    "title": "承認",
+    "approve": "承認",
+    "reject": "却下",
+    "pending": "承認待ち",
+    "approved": "承認済み",
+    "rejected": "却下済み",
+    "reason": "理由",
+    "noApprovals": "承認待ちの項目はありません"
+  },
+  "costs": {
+    "title": "コスト",
+    "totalCost": "合計コスト",
+    "byAgent": "エージェント別",
+    "thisMonth": "今月",
+    "currency": "USD",
+    "noCosts": "コストデータがありません"
+  },
+  "settings": {
+    "title": "設定",
+    "language": "言語",
+    "languageJa": "日本語",
+    "languageEn": "English",
+    "apiKeys": "APIキー管理",
+    "newApiKey": "新しいAPIキーを生成",
+    "apiKeyName": "キー名",
+    "theme": "テーマ",
+    "darkMode": "ダークモード",
+    "saved": "設定を保存しました"
+  },
+  "org": {
+    "title": "組織",
+    "members": "メンバー",
+    "invite": "メンバーを招待",
+    "inviteEmail": "招待するメールアドレス",
+    "role": {
+      "admin": "管理者",
+      "member": "メンバー",
+      "viewer": "閲覧者"
+    }
+  },
+  "plugins": {
+    "title": "プラグイン",
+    "install": "インストール",
+    "uninstall": "アンインストール",
+    "installed": "インストール済み",
+    "available": "利用可能",
+    "noPlugins": "プラグインがありません"
+  },
+  "errors": {
+    "notFound": "ページが見つかりません",
+    "notFoundMessage": "お探しのページは存在しないか、移動した可能性があります。",
+    "goHome": "ホームに戻る",
+    "networkError": "ネットワークエラーが発生しました",
+    "unauthorized": "認証が必要です",
+    "forbidden": "アクセス権限がありません",
+    "serverError": "サーバーエラーが発生しました"
+  }
+}

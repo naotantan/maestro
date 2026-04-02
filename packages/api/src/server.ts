@@ -1,0 +1,112 @@
+import express, { type Express } from 'express';
+import cors from 'cors';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
+import { randomUUID } from 'crypto';
+import { healthRouter } from './routes/health';
+import { companiesRouter } from './routes/companies';
+import { authRouter } from './routes/auth';
+import { orgRouter } from './routes/org';
+import { agentsRouter } from './routes/agents';
+import { issuesRouter } from './routes/issues';
+import { goalsRouter } from './routes/goals';
+import { projectsRouter } from './routes/projects';
+import { costsRouter } from './routes/costs';
+import { routinesRouter } from './routes/routines';
+import { approvalsRouter } from './routes/approvals';
+import { activityRouter } from './routes/activity';
+import { pluginsRouter } from './routes/plugins';
+import { errorHandler } from './middleware/error-handler';
+import { authMiddleware } from './middleware/auth';
+
+export function createApp(): Express {
+  const app = express();
+
+  // セキュリティ設定
+  app.use(helmet());
+
+  // 追加のセキュリティヘッダー
+  app.use(
+    helmet.contentSecurityPolicy({
+      directives: {
+        defaultSrc: ["'none'"],
+        scriptSrc: ["'none'"],
+        objectSrc: ["'none'"],
+      },
+    })
+  );
+
+  // CORS設定（複数オリジンのホワイトリスト対応）
+  const allowedOrigins = (process.env.CORS_ORIGIN || 'http://localhost:5173').split(',');
+  app.use(
+    cors({
+      origin: (origin, callback) => {
+        // 開発時はoriginなしのリクエスト（curlなど）も許可
+        if (!origin || allowedOrigins.includes(origin.trim())) {
+          callback(null, true);
+        } else {
+          callback(new Error('CORS policy violation'));
+        }
+      },
+      credentials: true,
+    })
+  );
+
+  // X-Request-ID ヘッダーを追加（監査ログ用）
+  app.use((_req, res, next) => {
+    res.setHeader('X-Request-ID', randomUUID());
+    next();
+  });
+
+  // グローバルレート制限: 15分あたり100リクエスト
+  app.use(
+    rateLimit({
+      windowMs: 15 * 60 * 1000,
+      max: 100,
+      message: {
+        error: 'rate_limit_exceeded',
+        message: 'リクエストが多すぎます。しばらく待ってから再試行してください。',
+      },
+    })
+  );
+
+  // 認証エンドポイント専用の厳格なレート制限
+  const authRateLimit = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15分
+    max: 10, // 15分あたり10回まで
+    message: {
+      error: 'rate_limit_exceeded',
+      message: '認証試行回数が多すぎます。',
+    },
+    standardHeaders: true,
+    legacyHeaders: false,
+  });
+
+  app.use(express.json());
+  app.use(express.urlencoded({ extended: true }));
+
+  // ヘルスチェック（認証不要）
+  app.use('/health', healthRouter);
+
+  // 認証エンドポイント（認証不要・厳格なレート制限付き）
+  app.use('/api/auth', authRateLimit, authRouter);
+
+  // 認証付きルート
+  app.use('/api', authMiddleware);
+  app.use('/api/org', orgRouter);
+  app.use('/api/companies', companiesRouter);
+  app.use('/api/agents', agentsRouter);
+  app.use('/api/issues', issuesRouter);
+  app.use('/api/goals', goalsRouter);
+  app.use('/api/projects', projectsRouter);
+  app.use('/api/costs', costsRouter);
+  app.use('/api/routines', routinesRouter);
+  app.use('/api/approvals', approvalsRouter);
+  app.use('/api/activity', activityRouter);
+  app.use('/api/plugins', pluginsRouter);
+
+  // エラーハンドリング
+  app.use(errorHandler);
+
+  return app;
+}

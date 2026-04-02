@@ -1,0 +1,31 @@
+{
+  "name": "@company/adapters",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "dist/index.js",
+  "exports": {
+    ".": "./dist/index.js",
+    "./claude-local": "./dist/claude-local.js",
+    "./codex-local": "./dist/codex-local.js",
+    "./cursor": "./dist/cursor.js",
+    "./gemini-local": "./dist/gemini-local.js",
+    "./openclaw-gateway": "./dist/openclaw-gateway.js",
+    "./opencode-local": "./dist/opencode-local.js",
+    "./pi-local": "./dist/pi-local.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@company/shared": "workspace:*",
+    "node-fetch": "^3.3.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "tsx": "^4.7.0",
+    "typescript": "^5.4.0",
+    "vitest": "^1.4.0"
+  }
+}
