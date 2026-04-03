@@ -37,10 +37,17 @@ const SCHEDULE_TIME_REGEX = /^([01][0-9]|2[0-3]):[0-5][0-9]$/;
 const PATH_TRAVERSAL_REGEX = /\.\./;
 
 // バックアップ設定バリデーション関数
+// enabled=false のとき他フィールドのバリデーションをスキップ
 // enabled=true のとき scheduleType, scheduleTime, destinationType が必須
 // destinationType に応じて追加フィールドが必須
 // 戻り値: エラーメッセージ文字列 or null（正常）
 function validateBackupConfig(backup: BackupConfig): string | null {
+  // enabled=false の場合は他フィールドのバリデーションをスキップ
+  if (backup.enabled === false) {
+    return null;
+  }
+
+  // 以下は enabled=true または undefined（新規設定時）の場合
   if (backup.scheduleType !== undefined && !VALID_SCHEDULE_TYPES.includes(backup.scheduleType)) {
     return `scheduleType が無効です。有効な値: ${VALID_SCHEDULE_TYPES.join(', ')}`;
   }
