@@ -2,19 +2,32 @@ import type { Request, Response, NextFunction } from 'express';
 
 /**
  * 文字列のサニタイズ（XSS対策）
+ * HTMLエンティティエンコーディングで危険な文字を無力化する（削除ではなくエスケープ）
  */
 export function sanitizeString(input: string): string {
+  const map: Record<string, string> = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;',
+  };
   return input
-    .replace(/[<>]/g, '') // HTMLタグの除去
+    .replace(/[&<>"']/g, (char) => map[char]) // HTMLエンティティエスケープ
     .trim()
     .slice(0, 10000); // 最大長制限
 }
 
 /**
- * メールアドレスの検証
+ * メールアドレスの検証（RFC 5321 簡易準拠）
+ * @ が複数存在する場合・ローカルパートが空の場合を明示的に拒否する
  */
 export function isValidEmail(email: string): boolean {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  // @ が正確に1つであることを確認
+  if ((email.match(/@/g) || []).length !== 1) return false;
+  // RFC 5321 簡易パターン（実用的な範囲でバリデーション）
+  const emailRegex =
+    /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
   return emailRegex.test(email) && email.length <= 254;
 }
 

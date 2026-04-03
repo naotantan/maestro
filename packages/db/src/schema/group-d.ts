@@ -1,5 +1,5 @@
 import {
-  pgTable, text, varchar, timestamp, uuid, index
+  pgTable, text, varchar, timestamp, uuid, index, integer
 } from 'drizzle-orm/pg-core';
 import { companies } from './group-a';
 
@@ -11,6 +11,7 @@ export const goals = pgTable('goals', {
   description: text('description'),
   deadline: timestamp('deadline'),
   status: varchar('status', { length: 20 }).default('in_progress'),
+  progress: integer('progress').default(0), // 達成率 0-100
   created_at: timestamp('created_at').defaultNow(),
   updated_at: timestamp('updated_at').defaultNow(),
 }, (table) => ({

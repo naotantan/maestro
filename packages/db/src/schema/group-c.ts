@@ -1,5 +1,5 @@
 import {
-  pgTable, text, varchar, integer, timestamp, uuid, index, primaryKey
+  pgTable, text, varchar, integer, timestamp, uuid, index, primaryKey, uniqueIndex
 } from 'drizzle-orm/pg-core';
 import { companies } from './group-a';
 import { agents } from './group-b';
@@ -101,7 +101,18 @@ export const work_products = pgTable('work_products', {
   idxIssue: index('idx_products_issue').on(table.issue_id),
 }));
 
-// C9: issue_read_states
+// C9: issue_goals（Issue↔Goal紐付け）
+export const issue_goals = pgTable('issue_goals', {
+  issue_id: uuid('issue_id').notNull().references(() => issues.id, { onDelete: 'cascade' }),
+  goal_id: uuid('goal_id').notNull(),
+  created_at: timestamp('created_at').defaultNow(),
+}, (table) => ({
+  pk: primaryKey({ columns: [table.issue_id, table.goal_id] }),
+  idxIssue: index('idx_issue_goals_issue').on(table.issue_id),
+  idxGoal: index('idx_issue_goals_goal').on(table.goal_id),
+}));
+
+// C10: issue_read_states
 export const issue_read_states = pgTable('issue_read_states', {
   user_id: uuid('user_id').notNull(),
   issue_id: uuid('issue_id').notNull().references(() => issues.id, { onDelete: 'cascade' }),

@@ -102,17 +102,17 @@
     "status": {
       "backlog": "バックログ",
       "todo": "ToDo",
-      "in_progress": "進行中",
-      "in_review": "レビュー中",
       "done": "完了",
-      "cancelled": "キャンセル"
+      "cancelled": "キャンセル",
+      "inProgress": "進行中",
+      "inReview": "レビュー中"
     },
     "priorities": {
       "urgent": "緊急",
       "high": "高",
       "medium": "中",
       "low": "低",
-      "no_priority": "優先度なし"
+      "noPriority": "優先度なし"
     },
     "noIssues": "Issueはありません",
     "createFirst": "最初のIssueを作成しましょう"
@@ -152,7 +152,22 @@
     "byAgent": "エージェント別",
     "thisMonth": "今月",
     "currency": "USD",
-    "noCosts": "コストデータがありません"
+    "noCosts": "コストデータがありません",
+    "budget": "予算",
+    "budgetPolicy": "予算ポリシー",
+    "budgetLimit": "予算上限",
+    "budgetPeriod": "期間",
+    "alertThreshold": "アラート閾値",
+    "limitAmountUsd": "上限金額 (USD)",
+    "periodMonthly": "月次",
+    "periodWeekly": "週次",
+    "periodDaily": "日次",
+    "noBudgetPolicies": "予算ポリシーが設定されていません",
+    "addBudgetPolicy": "予算ポリシーを追加",
+    "model": "モデル",
+    "inputTokens": "入力トークン",
+    "outputTokens": "出力トークン",
+    "costUsd": "コスト (USD)"
   },
   "settings": {
     "title": "設定",
@@ -183,7 +198,27 @@
     "uninstall": "アンインストール",
     "installed": "インストール済み",
     "available": "利用可能",
-    "noPlugins": "プラグインがありません"
+    "noPlugins": "プラグインがありません",
+    "jobs": "ジョブ",
+    "newJob": "ジョブを作成",
+    "jobName": "ジョブ名",
+    "jobSchedule": "スケジュール",
+    "runJob": "今すぐ実行",
+    "jobStatus": "ジョブステータス",
+    "jobRunning": "実行中",
+    "jobCompleted": "完了",
+    "jobFailed": "失敗",
+    "noJobs": "ジョブがありません",
+    "webhooks": "Webhook",
+    "newWebhook": "Webhookを追加",
+    "webhookUrl": "エンドポイントURL",
+    "webhookEvents": "イベント",
+    "noWebhooks": "Webhookが設定されていません",
+    "repositoryUrl": "リポジトリURL",
+    "isActive": "有効",
+    "viewJobs": "ジョブを表示",
+    "viewWebhooks": "Webhookを表示",
+    "managePlugin": "プラグイン管理"
   },
   "errors": {
     "notFound": "ページが見つかりません",
@@ -193,5 +228,27 @@
     "unauthorized": "認証が必要です",
     "forbidden": "アクセス権限がありません",
     "serverError": "サーバーエラーが発生しました"
+  },
+  "activity": {
+    "title": "アクティビティ",
+    "entityType": "種別",
+    "action": "アクション",
+    "entityId": "対象ID",
+    "noActivity": "アクティビティの記録はありません",
+    "actions": {
+      "create": "作成",
+      "update": "更新",
+      "delete": "削除"
+    },
+    "entities": {
+      "agent": "エージェント",
+      "issue": "Issue",
+      "goal": "ゴール",
+      "project": "プロジェクト",
+      "cost": "コスト",
+      "routine": "ルーティン",
+      "plugin": "プラグイン",
+      "approval": "承認"
+    }
   }
 }

@@ -18,6 +18,7 @@ import { activityRouter } from './routes/activity';
 import { pluginsRouter } from './routes/plugins';
 import { errorHandler } from './middleware/error-handler';
 import { authMiddleware } from './middleware/auth';
+import { activityLogger } from './middleware/activity-logger';
 
 export function createApp(): Express {
   const app = express();
@@ -58,11 +59,16 @@ export function createApp(): Express {
     next();
   });
 
-  // グローバルレート制限: 15分あたり100リクエスト
+  // グローバルレート制限: 15分あたり最大リクエスト数（環境変数 RATE_LIMIT_MAX で上書き可能）
+  const rateLimitMax = process.env.RATE_LIMIT_MAX
+    ? parseInt(process.env.RATE_LIMIT_MAX, 10)
+    : process.env.NODE_ENV === 'development'
+      ? 1000
+      : 100;
   app.use(
     rateLimit({
       windowMs: 15 * 60 * 1000,
-      max: 100,
+      max: rateLimitMax,
       message: {
         error: 'rate_limit_exceeded',
         message: 'リクエストが多すぎます。しばらく待ってから再試行してください。',
@@ -93,6 +99,8 @@ export function createApp(): Express {
 
   // 認証付きルート
   app.use('/api', authMiddleware);
+  // Activity自動記録（認証済みの全エンドポイントに適用）
+  app.use('/api', activityLogger);
   app.use('/api/org', orgRouter);
   app.use('/api/companies', companiesRouter);
   app.use('/api/agents', agentsRouter);
@@ -104,6 +112,11 @@ export function createApp(): Express {
   app.use('/api/approvals', approvalsRouter);
   app.use('/api/activity', activityRouter);
   app.use('/api/plugins', pluginsRouter);
+
+  // 404ハンドラ（未定義ルートへのリクエストをJSON形式で返す）
+  app.use((_req, res) => {
+    res.status(404).json({ error: 'not_found', message: '指定されたリソースは存在しません' });
+  });
 
   // エラーハンドリング
   app.use(errorHandler);

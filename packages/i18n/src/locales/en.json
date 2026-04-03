@@ -102,17 +102,17 @@
     "status": {
       "backlog": "Backlog",
       "todo": "Todo",
-      "in_progress": "In Progress",
-      "in_review": "In Review",
       "done": "Done",
-      "cancelled": "Cancelled"
+      "cancelled": "Cancelled",
+      "inProgress": "In Progress",
+      "inReview": "In Review"
     },
     "priorities": {
       "urgent": "Urgent",
       "high": "High",
       "medium": "Medium",
       "low": "Low",
-      "no_priority": "No Priority"
+      "noPriority": "No Priority"
     },
     "noIssues": "No issues found",
     "createFirst": "Create your first issue to get started"
@@ -152,7 +152,22 @@
     "byAgent": "By Agent",
     "thisMonth": "This Month",
     "currency": "USD",
-    "noCosts": "No cost data available"
+    "noCosts": "No cost data available",
+    "budget": "Budget",
+    "budgetPolicy": "Budget Policy",
+    "budgetLimit": "Budget Limit",
+    "budgetPeriod": "Period",
+    "alertThreshold": "Alert Threshold",
+    "limitAmountUsd": "Limit Amount (USD)",
+    "periodMonthly": "Monthly",
+    "periodWeekly": "Weekly",
+    "periodDaily": "Daily",
+    "noBudgetPolicies": "No budget policies configured",
+    "addBudgetPolicy": "Add Budget Policy",
+    "model": "Model",
+    "inputTokens": "Input Tokens",
+    "outputTokens": "Output Tokens",
+    "costUsd": "Cost (USD)"
   },
   "settings": {
     "title": "Settings",
@@ -183,7 +198,27 @@
     "uninstall": "Uninstall",
     "installed": "Installed",
     "available": "Available",
-    "noPlugins": "No plugins installed"
+    "noPlugins": "No plugins installed",
+    "jobs": "Jobs",
+    "newJob": "Create Job",
+    "jobName": "Job Name",
+    "jobSchedule": "Schedule",
+    "runJob": "Run Now",
+    "jobStatus": "Job Status",
+    "jobRunning": "Running",
+    "jobCompleted": "Completed",
+    "jobFailed": "Failed",
+    "noJobs": "No jobs configured",
+    "webhooks": "Webhooks",
+    "newWebhook": "Add Webhook",
+    "webhookUrl": "Endpoint URL",
+    "webhookEvents": "Events",
+    "noWebhooks": "No webhooks configured",
+    "repositoryUrl": "Repository URL",
+    "isActive": "Active",
+    "viewJobs": "View Jobs",
+    "viewWebhooks": "View Webhooks",
+    "managePlugin": "Manage Plugin"
   },
   "errors": {
     "notFound": "Page Not Found",
@@ -193,5 +228,27 @@
     "unauthorized": "Authentication required",
     "forbidden": "Access denied",
     "serverError": "A server error occurred"
+  },
+  "activity": {
+    "title": "Activity",
+    "entityType": "Entity Type",
+    "action": "Action",
+    "entityId": "Entity ID",
+    "noActivity": "No activity recorded yet",
+    "actions": {
+      "create": "Created",
+      "update": "Updated",
+      "delete": "Deleted"
+    },
+    "entities": {
+      "agent": "Agent",
+      "issue": "Issue",
+      "goal": "Goal",
+      "project": "Project",
+      "cost": "Cost",
+      "routine": "Routine",
+      "plugin": "Plugin",
+      "approval": "Approval"
+    }
   }
 }

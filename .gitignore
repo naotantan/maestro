@@ -11,3 +11,7 @@ drizzle/
 *.tsbuildinfo
 coverage/
 .vite/
+# デバッグ用一時ファイル
+packages/api/debug*.mjs
+# テスト結果JSON（ローカルのみ）
+test_w9_performance_result.json

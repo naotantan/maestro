@@ -1,6 +1,7 @@
 import { Router, type Router as RouterType } from 'express';
 import { getDb, companies, company_memberships, join_requests } from '@company/db';
 import { eq, and } from 'drizzle-orm';
+import { sanitizePagination } from '../middleware/validate';
 
 export const orgRouter: RouterType = Router();
 
@@ -42,8 +43,7 @@ orgRouter.patch('/', async (req, res, next) => {
 // GET /api/org/members
 orgRouter.get('/members', async (req, res, next) => {
   try {
-    const limit = Math.min(parseInt((req.query.limit as string) || '20'), 100);
-    const offset = parseInt((req.query.offset as string) || '0');
+    const { limit, offset } = sanitizePagination(req.query.limit, req.query.offset);
     const db = getDb();
     const members = await db
       .select()
@@ -129,6 +129,21 @@ orgRouter.post('/join-requests/:id/approve', async (req, res, next) => {
 orgRouter.post('/join-requests/:id/deny', async (req, res, next) => {
   try {
     const db = getDb();
+    // 自社のリクエストのみ操作可能（アクセス制御）
+    const existing = await db
+      .select({ id: join_requests.id })
+      .from(join_requests)
+      .where(
+        and(
+          eq(join_requests.id, req.params.id),
+          eq(join_requests.company_id, req.companyId!)
+        )
+      )
+      .limit(1);
+    if (!existing.length) {
+      res.status(404).json({ error: 'not_found', message: 'リクエストが見つかりません' });
+      return;
+    }
     await db
       .update(join_requests)
       .set({ status: 'denied', reviewed_at: new Date() })

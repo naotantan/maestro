@@ -46,21 +46,47 @@ export async function authMiddleware(
   try {
     const db = getDb();
     // 全APIキーを取得してbcryptで比較（プレフィックスマッチングは最適化）
-    const prefix = rawKey.substring(0, rawKey.indexOf('_') + 1);
+    // プレフィックスは2番目の_までを含む（例: comp_live_）
+    const firstUnderscore = rawKey.indexOf('_');
+    const secondUnderscore = rawKey.indexOf('_', firstUnderscore + 1);
+    const prefix = secondUnderscore !== -1
+      ? rawKey.substring(0, secondUnderscore + 1)
+      : rawKey.substring(0, firstUnderscore + 1);
     const keys = await db
       .select()
       .from(board_api_keys)
       .where(eq(board_api_keys.key_prefix, prefix));
 
+    // keysが配列であることを確認
+    if (!Array.isArray(keys)) {
+      logAuthFailure(req, 'db_error');
+      console.error('[DEBUG] keys is not array:', typeof keys, keys);
+      res.status(401).json({
+        error: 'invalid_api_key',
+        message: '無効なAPIキーです。',
+      });
+      return;
+    }
+    // デバッグログは本番環境のセキュリティリスクになるため削除済み
+
     // bcryptで平文と保存済みハッシュを比較
     let matchedKey = null;
-    for (const key of keys) {
-      if (!key.key_hash) continue; // ハッシュがない場合はスキップ
-      const isMatch = await bcrypt.compare(rawKey, key.key_hash);
-      if (isMatch && key.enabled) {
-        matchedKey = key;
-        break;
+    try {
+      for (const key of keys) {
+        if (!key.key_hash) continue; // ハッシュがない場合はスキップ
+        const isMatch = await bcrypt.compare(rawKey, key.key_hash);
+        if (isMatch && key.enabled) {
+          matchedKey = key;
+          break;
+        }
       }
+    } catch (bcryptErr) {
+      logAuthFailure(req, 'bcrypt_error');
+      res.status(401).json({
+        error: 'invalid_api_key',
+        message: '無効なAPIキーです。',
+      });
+      return;
     }
 
     if (!matchedKey) {

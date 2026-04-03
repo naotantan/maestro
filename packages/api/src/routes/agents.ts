@@ -3,6 +3,7 @@ import { getDb, agents, heartbeat_runs, agent_api_keys } from '@company/db';
 import { eq, and, desc } from 'drizzle-orm';
 import { generateApiKey } from '../utils/crypto';
 import { API_KEY_PREFIXES } from '@company/shared';
+import { sanitizeString } from '../middleware/validate';
 
 export const agentsRouter: RouterType = Router();
 
@@ -33,14 +34,16 @@ agentsRouter.post('/', async (req, res, next) => {
       });
       return;
     }
+    const sanitizedName = sanitizeString(name);
+    const sanitizedDescription = description ? sanitizeString(description) : description;
     const db = getDb();
     const newAgent = await db
       .insert(agents)
       .values({
         company_id: req.companyId!,
-        name,
+        name: sanitizedName,
         type,
-        description,
+        description: sanitizedDescription,
         config,
       })
       .returning();

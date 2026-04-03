@@ -1,6 +1,7 @@
 import { Router, type Router as RouterType } from 'express';
 import { getDb, projects, project_workspaces } from '@company/db';
 import { eq, and, desc } from 'drizzle-orm';
+import { sanitizeString } from '../middleware/validate';
 
 export const projectsRouter: RouterType = Router();
 
@@ -31,13 +32,15 @@ projectsRouter.post('/', async (req, res, next) => {
       });
       return;
     }
+    const sanitizedName = sanitizeString(name);
+    const sanitizedDescription = description ? sanitizeString(description) : description;
     const db = getDb();
     const newProject = await db
       .insert(projects)
       .values({
         company_id: req.companyId!,
-        name,
-        description,
+        name: sanitizedName,
+        description: sanitizedDescription,
       })
       .returning();
     res.status(201).json({ data: newProject[0] });

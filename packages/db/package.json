@@ -15,14 +15,14 @@
     "studio": "drizzle-kit studio"
   },
   "dependencies": {
-    "drizzle-orm": "^0.30.0",
     "dotenv": "^16.4.0",
+    "drizzle-orm": "^0.30.0",
     "pg": "^8.11.0"
   },
   "devDependencies": {
     "@types/pg": "^8.11.0",
-    "drizzle-kit": "^0.20.0",
     "dotenv": "^16.4.0",
+    "drizzle-kit": "^0.20.18",
     "tsx": "^4.7.0",
     "typescript": "^5.4.0"
   }

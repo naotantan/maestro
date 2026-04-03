@@ -28,7 +28,11 @@ export async function hashApiKey(rawKey: string): Promise<string> {
  * AES-256-GCM で文字列を暗号化する
  */
 export function encrypt(plaintext: string): string {
-  const key = Buffer.from(process.env.ENCRYPTION_KEY || '0'.repeat(64), 'hex');
+  const keyHex = process.env.ENCRYPTION_KEY;
+  if (!keyHex || keyHex.length !== 64) {
+    throw new Error('ENCRYPTION_KEY が未設定または不正です（64文字のhex文字列が必要）');
+  }
+  const key = Buffer.from(keyHex, 'hex');
   const iv = crypto.randomBytes(16);
   const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
 
@@ -43,7 +47,11 @@ export function encrypt(plaintext: string): string {
  * AES-256-GCM で文字列を復号する
  */
 export function decrypt(ciphertext: string): string {
-  const key = Buffer.from(process.env.ENCRYPTION_KEY || '0'.repeat(64), 'hex');
+  const keyHex = process.env.ENCRYPTION_KEY;
+  if (!keyHex || keyHex.length !== 64) {
+    throw new Error('ENCRYPTION_KEY が未設定または不正です（64文字のhex文字列が必要）');
+  }
+  const key = Buffer.from(keyHex, 'hex');
   const buf = Buffer.from(ciphertext, 'base64');
 
   const iv = buf.subarray(0, 16);

@@ -1,14 +1,14 @@
 import { Router, type Router as RouterType } from 'express';
-import { getDb, issues, issue_comments } from '@company/db';
+import { getDb, issues, issue_comments, issue_goals, agents } from '@company/db';
 import { eq, and, desc, sql } from 'drizzle-orm';
+import { sanitizeString, sanitizePagination } from '../middleware/validate';
 
 export const issuesRouter: RouterType = Router();
 
 // GET /api/issues
 issuesRouter.get('/', async (req, res, next) => {
   try {
-    const limit = Math.min(parseInt((req.query.limit as string) || '20'), 100);
-    const offset = parseInt((req.query.offset as string) || '0');
+    const { limit, offset } = sanitizePagination(req.query.limit, req.query.offset);
     const db = getDb();
     const rows = await db
       .select()
@@ -40,6 +40,9 @@ issuesRouter.post('/', async (req, res, next) => {
       });
       return;
     }
+    // XSS対策: HTMLタグを除去
+    const sanitizedTitle = sanitizeString(title);
+    const sanitizedDescription = description ? sanitizeString(description) : description;
     const db = getDb();
     // identifier 採番
     const countResult = await db
@@ -48,16 +51,29 @@ issuesRouter.post('/', async (req, res, next) => {
       .where(eq(issues.company_id, req.companyId!));
     const count = Number(countResult[0]?.count ?? 0);
     const identifier = `COMP-${String(count + 1).padStart(3, '0')}`;
+    // assigned_toが未指定の場合、有効なエージェントに自動アサイン
+    let finalAssignedTo = assigned_to;
+    if (!finalAssignedTo) {
+      const availableAgents = await db
+        .select({ id: agents.id })
+        .from(agents)
+        .where(and(eq(agents.company_id, req.companyId!), eq(agents.enabled, true)))
+        .limit(1);
+      if (availableAgents.length > 0) {
+        finalAssignedTo = availableAgents[0].id;
+      }
+    }
+
     const newIssue = await db
       .insert(issues)
       .values({
         company_id: req.companyId!,
         identifier,
-        title,
-        description,
+        title: sanitizedTitle,
+        description: sanitizedDescription,
         status,
         priority,
-        assigned_to,
+        assigned_to: finalAssignedTo,
       })
       .returning();
     res.status(201).json({ data: newIssue[0] });
@@ -157,6 +173,74 @@ issuesRouter.get('/:issueId/comments', async (req, res, next) => {
       .where(eq(issue_comments.issue_id, req.params.issueId))
       .orderBy(issue_comments.created_at);
     res.json({ data: comments });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /api/issues/:issueId/goals — 紐付きGoal一覧
+issuesRouter.get('/:issueId/goals', async (req, res, next) => {
+  try {
+    const db = getDb();
+    const links = await db
+      .select()
+      .from(issue_goals)
+      .where(eq(issue_goals.issue_id, req.params.issueId));
+    res.json({ data: links });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /api/issues/:issueId/goals — GoalをIssueに紐付け
+issuesRouter.post('/:issueId/goals', async (req, res, next) => {
+  try {
+    const { goal_id } = req.body as { goal_id?: string };
+    if (!goal_id) {
+      res.status(400).json({ error: 'validation_failed', message: 'goal_id は必須です' });
+      return;
+    }
+    const db = getDb();
+    // Issue の存在確認
+    const issueRows = await db.select({ id: issues.id })
+      .from(issues)
+      .where(and(eq(issues.id, req.params.issueId), eq(issues.company_id, req.companyId!)))
+      .limit(1);
+    if (!issueRows.length) {
+      res.status(404).json({ error: 'not_found', message: 'Issueが見つかりません' });
+      return;
+    }
+    let link;
+    try {
+      link = await db.insert(issue_goals).values({
+        issue_id: req.params.issueId,
+        goal_id,
+      }).returning();
+    } catch (dbErr: any) {
+      // PostgreSQL unique violation (23505) = すでに紐付け済み
+      if (dbErr?.code === '23505') {
+        res.status(409).json({ error: 'conflict', message: 'すでに紐付け済みです' });
+        return;
+      }
+      throw dbErr;
+    }
+    res.status(201).json({ data: link[0] });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// DELETE /api/issues/:issueId/goals/:goalId — 紐付け解除
+issuesRouter.delete('/:issueId/goals/:goalId', async (req, res, next) => {
+  try {
+    const db = getDb();
+    await db.delete(issue_goals).where(
+      and(
+        eq(issue_goals.issue_id, req.params.issueId),
+        eq(issue_goals.goal_id, req.params.goalId)
+      )
+    );
+    res.json({ success: true });
   } catch (err) {
     next(err);
   }
