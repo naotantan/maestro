@@ -1,6 +1,7 @@
 import { Router, type Router as RouterType } from 'express';
 import { getDb, routines, routine_runs } from '@company/db';
 import { eq, and, desc } from 'drizzle-orm';
+import { sanitizeString } from '../middleware/validate';
 
 export const routinesRouter: RouterType = Router();
 
@@ -36,9 +37,9 @@ routinesRouter.post('/', async (req, res, next) => {
       .insert(routines)
       .values({
         company_id: req.companyId!,
-        name,
-        description,
-        cron_expression,
+        name: sanitizeString(name),
+        description: description ? sanitizeString(description) : description,
+        cron_expression: sanitizeString(cron_expression),
       })
       .returning();
     res.status(201).json({ data: newRoutine[0] });

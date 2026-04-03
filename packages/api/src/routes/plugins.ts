@@ -3,6 +3,7 @@ import { getDb, plugins, plugin_jobs, plugin_job_runs, plugin_webhooks } from '@
 import { eq, and } from 'drizzle-orm';
 import { promises as dns } from 'dns';
 import { isIP } from 'net';
+import { sanitizeString } from '../middleware/validate';
 
 /**
  * SSRF対策: webhook URL がプライベート/ループバックIPを指していないか検証する
@@ -155,8 +156,8 @@ pluginsRouter.post('/', async (req, res, next) => {
       .insert(plugins)
       .values({
         company_id: req.companyId!,
-        name,
-        description,
+        name: sanitizeString(name),
+        description: description ? sanitizeString(description) : description,
         repository_url,
       })
       .returning();
@@ -208,8 +209,8 @@ pluginsRouter.patch('/:pluginId', async (req, res, next) => {
       return;
     }
     const updates: Record<string, unknown> = {};
-    if (name !== undefined) updates.name = name;
-    if (description !== undefined) updates.description = description;
+    if (name !== undefined) updates.name = sanitizeString(name);
+    if (description !== undefined) updates.description = description ? sanitizeString(description) : description;
     if (repository_url !== undefined) updates.repository_url = repository_url;
     if (is_active !== undefined) updates.is_active = is_active;
     const updated = await db.update(plugins)
@@ -281,7 +282,7 @@ pluginsRouter.post('/:pluginId/jobs', async (req, res, next) => {
       return;
     }
     const job = await db.insert(plugin_jobs)
-      .values({ plugin_id: req.params.pluginId, name, schedule })
+      .values({ plugin_id: req.params.pluginId, name: sanitizeString(name), schedule: schedule ? sanitizeString(schedule) : schedule })
       .returning();
     res.status(201).json({ data: job[0] });
   } catch (err) {

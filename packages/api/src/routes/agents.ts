@@ -1,7 +1,7 @@
 import { Router, type Router as RouterType } from 'express';
 import { getDb, agents, heartbeat_runs, agent_api_keys } from '@company/db';
 import { eq, and, desc } from 'drizzle-orm';
-import { generateApiKey } from '../utils/crypto';
+import { generateApiKey, encrypt } from '../utils/crypto';
 import { API_KEY_PREFIXES, type AgentType } from '@company/shared';
 import { sanitizeString } from '../middleware/validate';
 
@@ -10,7 +10,6 @@ const VALID_AGENT_TYPES: AgentType[] = [
   'claude_local',   // Claude サブスクリプション（claude -p CLI、APIキー不要）
   'claude_api',     // Anthropic API キー（従量課金）
   'codex_local',
-  'cursor',
   'gemini_local',
   'openclaw_gateway',
   'opencode_local',
@@ -65,6 +64,8 @@ agentsRouter.post('/', async (req, res, next) => {
     const sanitizedName = sanitizeString(name);
     const sanitizedDescription = description ? sanitizeString(description) : description;
     const db = getDb();
+    // APIキーが含まれる場合は暗号化して保存（平文DB保存防止）
+    const configToSave = config ? encryptApiKeyInConfig(config) : config;
     const newAgent = await db
       .insert(agents)
       .values({
@@ -72,7 +73,7 @@ agentsRouter.post('/', async (req, res, next) => {
         name: sanitizedName,
         type,
         description: sanitizedDescription,
-        config,
+        config: configToSave,
       })
       .returning();
 
@@ -120,12 +121,14 @@ agentsRouter.patch('/:agentId', async (req, res, next) => {
       enabled?: boolean;
     };
     const db = getDb();
+    // APIキーが含まれる場合は暗号化して保存（平文DB保存防止）
+    const configToSave = config !== undefined ? encryptApiKeyInConfig(config) : undefined;
     const updated = await db
       .update(agents)
       .set({
-        ...(name && { name }),
-        ...(description !== undefined && { description }),
-        ...(config !== undefined && { config }),
+        ...(name && { name: sanitizeString(name) }),
+        ...(description !== undefined && { description: description ? sanitizeString(description) : description }),
+        ...(configToSave !== undefined && { config: configToSave }),
         ...(enabled !== undefined && { enabled }),
         updated_at: new Date(),
       })
@@ -198,3 +201,14 @@ agentsRouter.get('/:agentId/runs', async (req, res, next) => {
     next(err);
   }
 });
+
+/** config.apiKey が存在する場合のみ暗号化する（他のフィールドはそのまま） */
+function encryptApiKeyInConfig(config: Record<string, unknown>): Record<string, unknown> {
+  if (typeof config.apiKey !== 'string' || !config.apiKey) return config;
+  try {
+    return { ...config, apiKey: encrypt(config.apiKey) };
+  } catch {
+    // ENCRYPTION_KEY 未設定時はエラーを上位に伝播させる
+    throw new Error('APIキーの暗号化に失敗しました。ENCRYPTION_KEY 環境変数を確認してください');
+  }
+}

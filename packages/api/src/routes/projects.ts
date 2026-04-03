@@ -83,8 +83,8 @@ projectsRouter.patch('/:projectId', async (req, res, next) => {
     const updated = await db
       .update(projects)
       .set({
-        ...(name && { name }),
-        ...(description !== undefined && { description }),
+        ...(name && { name: sanitizeString(name) }),
+        ...(description !== undefined && { description: description ? sanitizeString(description) : description }),
         ...(status && { status }),
         updated_at: new Date(),
       })

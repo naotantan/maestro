@@ -48,6 +48,9 @@ importers:
 
   packages/api:
     dependencies:
+      '@company/adapters':
+        specifier: workspace:*
+        version: link:../adapters
       '@company/db':
         specifier: workspace:*
         version: link:../db
