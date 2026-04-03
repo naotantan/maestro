@@ -56,9 +56,9 @@ export const orgCommand = new Command('org')
         const spinner = ora('メンバー一覧を取得中...').start();
 
         try {
-          const response = await apiRequest<{ members: Member[] }>(
+          const response = await apiRequest<{ data: Member[] }>(
             'GET',
-            '/api/companies/:id/members',
+            '/api/org/members',
             apiKey,
           );
 
@@ -66,18 +66,18 @@ export const orgCommand = new Command('org')
 
           console.log(chalk.bold('\n👥 メンバー一覧\n'));
 
-          if (response.members.length === 0) {
+          if (response.data.length === 0) {
             console.log(chalk.gray('メンバーがいません'));
           } else {
-            const maxNameLen = Math.max(...response.members.map((m) => m.name.length), 4);
-            const maxEmailLen = Math.max(...response.members.map((m) => m.email.length), 5);
+            const maxNameLen = Math.max(...response.data.map((m) => m.name.length), 4);
+            const maxEmailLen = Math.max(...response.data.map((m) => m.email.length), 5);
 
             console.log(
               `${'名前'.padEnd(maxNameLen + 2)} ${'メール'.padEnd(maxEmailLen + 2)} ロール`,
             );
             console.log('-'.repeat(maxNameLen + maxEmailLen + 20));
 
-            for (const member of response.members) {
+            for (const member of response.data) {
               console.log(
                 `${member.name.padEnd(maxNameLen + 2)} ${member.email.padEnd(maxEmailLen + 2)} ${member.role}`,
               );

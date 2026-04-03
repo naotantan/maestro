@@ -34,7 +34,7 @@ export const backupCommand = new Command('backup')
           // Docker を使用して pg_dump を実行
           // 実装例（実際の接続情報は環境に応じて調整が必要）
           await execAsync(
-            `docker exec company-db pg_dump -U postgres company > "${backupFile}"`,
+            `docker exec company-postgres pg_dump -U postgres company > "${backupFile}"`,
           );
 
           spinner.succeed('バックアップ作成完了');

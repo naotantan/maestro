@@ -1,5 +1,5 @@
 import {
-  pgTable, text, varchar, timestamp, uuid, index, integer
+  pgTable, text, varchar, timestamp, uuid, index, integer, primaryKey
 } from 'drizzle-orm/pg-core';
 import { companies } from './group-a';
 
@@ -35,7 +35,9 @@ export const projects = pgTable('projects', {
 export const project_goals = pgTable('project_goals', {
   project_id: uuid('project_id').notNull().references(() => projects.id, { onDelete: 'cascade' }),
   goal_id: uuid('goal_id').notNull().references(() => goals.id, { onDelete: 'cascade' }),
-});
+}, (table) => ({
+  pk: primaryKey({ columns: [table.project_id, table.goal_id] }),
+}));
 
 // D4: project_workspaces
 export const project_workspaces = pgTable('project_workspaces', {
