@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 💬 Discussion / 質問・議論
+    url: https://github.com/naotantan/company-cli/discussions
+    about: バグ・機能要望以外の質問や議論はこちら / For questions and general discussion not related to bugs or features
+  - name: 🔒 Security Vulnerability / セキュリティ脆弱性
+    url: https://github.com/naotantan/company-cli/security/advisories/new
+    about: セキュリティ上の脆弱性は公開 Issue ではなく、こちらから非公開で報告してください / Please report security vulnerabilities privately, not in public Issues

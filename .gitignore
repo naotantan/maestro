@@ -17,3 +17,12 @@ packages/api/debug*.mjs
 test_w9_performance_result.json
 # テスト仕様書（ローカルのみ・push不要）
 engineering/test-results/
+
+# 内部ドキュメント（開発チーム内部用・公開リポジトリに含めない）
+document/
+engineering/
+claudecodex/
+
+# ローカルテスト用一時ファイル
+test_group_*.mjs
+test_output.log
