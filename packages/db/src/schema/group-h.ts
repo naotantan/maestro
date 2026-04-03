@@ -2,6 +2,7 @@ import {
   pgTable, text, varchar, integer, boolean, timestamp, uuid, json, index
 } from 'drizzle-orm/pg-core';
 import { companies } from './group-a';
+import { agents } from './group-b';
 
 // H1: plugins
 export const plugins = pgTable('plugins', {
@@ -120,6 +121,29 @@ export const feedback_votes = pgTable('feedback_votes', {
 }, (table) => ({
   idxEntity: index('idx_votes_entity').on(table.entity_id),
   idxUser: index('idx_votes_user').on(table.user_id),
+}));
+
+// H12: agent_handoffs — エージェント間引き継ぎ
+export const agent_handoffs = pgTable('agent_handoffs', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  company_id: uuid('company_id').notNull().references(() => companies.id, { onDelete: 'cascade' }),
+  from_agent_id: uuid('from_agent_id').notNull().references(() => agents.id, { onDelete: 'cascade' }),
+  to_agent_id: uuid('to_agent_id').notNull().references(() => agents.id, { onDelete: 'cascade' }),
+  issue_id: uuid('issue_id'),  // 任意: issues への参照（循環参照を避けFKなし）
+  // pending → running → completed / failed / cancelled
+  status: varchar('status', { length: 20 }).default('pending').notNull(),
+  prompt: text('prompt').notNull(),          // to_agent へのタスク指示
+  context: text('context'),                  // from_agent の最新出力（エンジンがセット）
+  result: text('result'),                    // to_agent の実行結果
+  error: text('error'),                      // 失敗時エラー内容
+  created_at: timestamp('created_at').defaultNow(),
+  started_at: timestamp('started_at'),
+  completed_at: timestamp('completed_at'),
+}, (table) => ({
+  idxCompany: index('idx_handoffs_company').on(table.company_id),
+  idxStatus: index('idx_handoffs_status').on(table.status),
+  idxFromAgent: index('idx_handoffs_from_agent').on(table.from_agent_id),
+  idxToAgent: index('idx_handoffs_to_agent').on(table.to_agent_id),
 }));
 
 // H11: principal_permission_grants

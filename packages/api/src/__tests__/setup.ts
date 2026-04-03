@@ -34,4 +34,6 @@ vi.mock('@company/db', () => ({
   activity_log: {},
   plugins: {},
   plugin_config: {},
+  agent_handoffs: {},
+  agent_task_sessions: {},
 }));

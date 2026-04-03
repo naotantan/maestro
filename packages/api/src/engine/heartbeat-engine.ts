@@ -5,8 +5,8 @@
  * - クラッシュ時はcrash-recoveryモジュールと連携して自動回復する
  */
 
-import { getDb, agents, heartbeat_runs, heartbeat_run_events, agent_runtime_state } from '@company/db';
-import { eq, and } from 'drizzle-orm';
+import { getDb, agents, heartbeat_runs, heartbeat_run_events, agent_runtime_state, agent_handoffs, agent_task_sessions } from '@company/db';
+import { eq, and, desc } from 'drizzle-orm';
 import type { AgentType } from '@company/shared';
 
 // @company/adapters は ESM のため CJS コンテキストから static import できない。
@@ -142,8 +142,89 @@ async function runAllHeartbeats(): Promise<void> {
         ))
       );
     }
+    // 引き継ぎ処理（ハートビートとは独立して実行）
+    await processHandoffs();
   } catch (err) {
     console.error('[HeartbeatEngine] スキャン中にエラー:', err);
+  }
+}
+
+/**
+ * pending 状態の引き継ぎを自動実行する（既存のハートビート処理とは独立）
+ * runAllHeartbeats() の末尾から呼ばれる
+ */
+async function processHandoffs(): Promise<void> {
+  try {
+    const db = getDb();
+
+    // pending の引き継ぎを最大2件取得（並列処理の上限）
+    const pending = await db
+      .select()
+      .from(agent_handoffs)
+      .where(eq(agent_handoffs.status, 'pending'))
+      .limit(2);
+
+    if (pending.length === 0) return;
+
+    await Promise.allSettled(pending.map(async (handoff) => {
+      // running に更新
+      await db.update(agent_handoffs)
+        .set({ status: 'running', started_at: new Date() })
+        .where(eq(agent_handoffs.id, handoff.id));
+
+      try {
+        // from_agent の最新セッション結果を context として取得
+        const lastSession = await db
+          .select({ result: agent_task_sessions.result })
+          .from(agent_task_sessions)
+          .where(eq(agent_task_sessions.agent_id, handoff.from_agent_id))
+          .orderBy(desc(agent_task_sessions.started_at))
+          .limit(1);
+        const context = lastSession[0]?.result ?? undefined;
+
+        // to_agent の情報を取得
+        const toAgentRows = await db
+          .select({ type: agents.type, config: agents.config })
+          .from(agents)
+          .where(eq(agents.id, handoff.to_agent_id))
+          .limit(1);
+        if (!toAgentRows[0]) throw new Error('to_agent が見つかりません');
+
+        const toAgent = toAgentRows[0];
+
+        // アダプター経由でタスク実行
+        const { createAdapter } = await import('@company/adapters');
+        const adapter = createAdapter(toAgent.type as AgentType, (toAgent.config as AdapterConfig) ?? {});
+        const response = await adapter.runTask({
+          taskId: handoff.id,
+          prompt: handoff.prompt,
+          context: context ?? undefined,
+        });
+
+        // 成功: completed に更新
+        await db.update(agent_handoffs)
+          .set({
+            status: response.finishReason === 'error' ? 'failed' : 'completed',
+            result: response.output || null,
+            context: context ?? null,
+            error: response.error ?? null,
+            completed_at: new Date(),
+          })
+          .where(eq(agent_handoffs.id, handoff.id));
+
+      } catch (err) {
+        // 失敗: failed に更新
+        await db.update(agent_handoffs)
+          .set({
+            status: 'failed',
+            error: err instanceof Error ? err.message : String(err),
+            completed_at: new Date(),
+          })
+          .where(eq(agent_handoffs.id, handoff.id));
+      }
+    }));
+  } catch (err) {
+    console.error('[HeartbeatEngine] processHandoffs エラー:', err);
   }
 }
 
