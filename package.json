@@ -12,7 +12,8 @@
     "db:migrate": "pnpm --filter @company/db migrate",
     "docker:up": "docker compose up -d",
     "docker:down": "docker compose down",
-    "format": "prettier --write \"packages/*/src/**/*.ts\""
+    "format": "prettier --write \"packages/*/src/**/*.ts\"",
+    "prepare": "node scripts/prepare-env.js"
   },
   "devDependencies": {
     "@types/inquirer": "^9.0.9",

@@ -61,6 +61,24 @@ GitHub Issues で提案してください。「feature request」ラベルを付
    - `chore:` その他メンテナンス
 6. プルリクエストを作成する
 
+## パッケージのビルド順序
+
+モノレポ構成のため、パッケージ間に依存関係があります。個別パッケージをビルドする場合は以下の順序で実行してください。
+
+```bash
+# 依存関係の順序（上から下へ）
+pnpm --filter @company/shared build
+pnpm --filter @company/db build
+pnpm --filter @company/i18n build
+pnpm --filter @company/adapters build
+pnpm --filter @company/api build
+pnpm --filter @company/cli build
+pnpm --filter @company/ui build
+
+# 全パッケージを一括ビルドする場合（トポロジカル順に自動解決）
+pnpm build
+```
+
 ## コードスタイル
 
 - TypeScript の厳格モードに準拠すること
