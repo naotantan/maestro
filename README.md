@@ -1,359 +1,382 @@
 # company-cli
 
-**AIエージェント対応の会社業務管理システム**
-
-AI-powered company management system compatible with Paperclip v0.3.1
+> **AIエージェントによる業務自動化を、既存システムと連携しながら安全に運用するためのバックエンド基盤**
+>
+> *A secure backend platform for running AI agent workflows integrated with your existing business systems.*
 
 ---
 
 ## 日本語
 
-### これは何？
+### 背景・解決する課題
 
-会社の日常業務を管理するWebシステムです。
-「誰がどの仕事をしているか」「プロジェクトの進み具合」「コストの記録」などを一元管理できます。
-Paperclip（AIエージェントを使って会社を運営するツール）と同じAPIを持っており、AIエージェントからも操作できます。
+AIエージェントを業務に導入しようとすると、次の問題に直面します。
 
-### 何ができるの？
+- **「AIが何をしているかわからない」** — 動作ログが残らず、トラブル時に原因が追えない
+- **「コストが膨らむ」** — API費用が青天井になるリスクがあり、現場に任せにくい
+- **「既存ツールと繋がらない」** — SlackやNotionとの連携に毎回カスタム開発が必要
+- **「承認なしに動いてしまう」** — AIが人間の確認なしにタスクを実行し、誤操作のリスクがある
 
-#### AIエージェント管理
-複数のAIエージェント（Claude・GPT・Gemini など）をひとつの画面で登録・監視できます。
-エージェントが落ちたら**自動で再起動**し、予算上限を超えたら**自動で停止**します。
-「どのエージェントが今何をしているか」をリアルタイムで把握できるので、AIを使った業務自動化を安心して任せられます。
+**company-cli** はこれらを一括で解決する、Paperclip v0.3.1 互換のAIエージェント管理バックエンドです。
 
-#### Issue（タスク）管理
-タスクを登録すると、登録済みのエージェントに**自動で担当を割り当て**ます。
-タスクには承認フローを設定でき、「AIが実行していいか人間が確認する」という安全なワークフローを作れます。
-また、タスクを目標（Goal）と紐付けることで「この作業は何のためにやっているか」が明確になります。
+---
 
-#### Goal（目標）管理
-「月間コスト削減10%」「Issue解決率90%以上」といった目標を登録しておくと、タスクの完了状況から**達成率を自動で計算**して更新します。
-「目標に対して今どこまで進んでいるか」が常に数字で見えるため、進捗報告の手間がなくなります。
+### できること（ビジネス価値）
 
-#### Project・コスト管理
-プロジェクトごとにAIの使用コスト（API費用など）を記録・追跡できます。
-毎日・毎週など定期的に繰り返すタスク（ルーティン）も登録でき、「忘れがちな定期作業」を自動化できます。
+#### 1. AIエージェントの安全な運用管理
 
-#### Plugin・Webhook連携
-Slack・Notion・GitHub など外部サービスへのWebhookを設定できます。
-「エージェントがタスクを完了したらSlackに通知する」といった連携が、コードを書かずにAPIだけで実現できます。
+複数のAIエージェント（Claude・GPT・Gemini など）を一元管理します。
 
-#### 全操作の自動ログ記録
-誰が・いつ・何をしたか、全ての操作を自動で記録します。
-「AIがいつ何を変更したか」のトレースができるため、AIが誤動作した際の原因調査が容易になります。
+- **自動再起動**: エージェントがクラッシュしても即時復旧。夜間・休日も無人で稼働継続
+- **予算上限による自動停止**: APIコストが設定値を超えると自動でエージェントを停止。コスト超過ゼロ
+- **Heartbeat監視**: 60秒ごとに稼働状態を確認。異常を即時検知して担当者に通知
 
-### 使っている技術
+> **効果**: AIの「暴走」「放置」「コスト超過」を仕組みで防止。管理者の監視コストを大幅削減。
 
-初めての人向けに説明すると、こんな技術で作られています：
+#### 2. タスク・承認フローの自動化
 
-- **バックエンド（サーバー）**: Node.js + TypeScript + Express.js
-- **データベース**: PostgreSQL（Docker で簡単に起動できます）
-- **フロントエンド（画面）**: React + Vite
-- **CLI（コマンドライン）**: Node.js コマンドラインツール
-- **パッケージ管理**: pnpm（高速なパッケージマネージャー）
+タスク（Issue）を登録すると、適切なエージェントへ**自動でアサイン**されます。
 
-### セットアップ（始め方）
+- **自動担当割り当て**: 空きエージェントにタスクを自動配分。担当決めの手間ゼロ
+- **人間による承認フロー**: AIが実行する前に担当者の承認を必須にするフローを設定可能
+- **目標との紐付け**: 各タスクを上位目標に連携。「なぜそのタスクをやるか」が常に明確
+
+> **効果**: 「AIに任せたいが、重要な判断は人間がしたい」というニーズに対応。安心して自動化を進められる。
+
+#### 3. 目標達成率のリアルタイム可視化
+
+「売上目標達成率」「Issue解決率」など、KPIを登録しておくと**タスク完了に連動して自動更新**されます。
+
+- 手動での進捗集計が不要になる
+- 経営陣・クライアントへのレポートをリアルタイムデータで即座に出力できる
+
+> **効果**: 週次・月次の進捗報告にかかる工数を削減。データ集計ミスもなくなる。
+
+#### 4. 外部サービスとのノーコード連携
+
+Slack・Notion・GitHub・Zapier など、Webhookに対応する任意のサービスと連携できます。
+
+- 「エージェントがタスクを完了 → Slackで通知」
+- 「予算アラート → 担当者にメール」
+- 「Issue作成 → GitHubにチケット起票」
+
+設定はAPIを叩くだけ。カスタム開発は不要です。
+
+> **効果**: 既存の業務ツールをそのまま活かしながら、AIワークフローを追加できる。
+
+#### 5. 全操作の監査ログ自動記録
+
+誰が・いつ・何をしたかを全て自動で記録します。
+
+- AIエージェントの操作履歴も完全にトレース可能
+- 「AIがいつ何を変更したか」を後から調査できるため、コンプライアンス対応や障害調査が容易
+
+> **効果**: AI導入後の「説明責任」と「ガバナンス」を確保。監査・内部統制にも対応。
+
+---
+
+### 導入事例イメージ
+
+| シナリオ | 使い方 |
+|---------|--------|
+| **社内ヘルプデスク自動化** | Issueにユーザーの問い合わせを登録 → AIエージェントが自動で回答案を作成 → 担当者が承認して送信 |
+| **定期レポート自動生成** | 毎週月曜にルーティンを設定 → AIが先週のデータを収集・整形 → Slackに自動投稿 |
+| **コスト管理の効率化** | プロジェクトごとにAI APIの使用コストを記録 → 月次コストレポートを自動集計 |
+| **マルチエージェント協調** | 調査エージェント・執筆エージェント・レビューエージェントを連携させて、コンテンツ制作を自動化 |
+
+---
+
+### システム要件・技術仕様
+
+| 項目 | 仕様 |
+|------|------|
+| **APIプロトコル** | REST API（JSON）|
+| **認証方式** | APIキー認証（Bearer トークン）|
+| **互換性** | Paperclip v0.3.1 API 互換 |
+| **データベース** | PostgreSQL 17 |
+| **サーバー** | Node.js 18+ / Express.js |
+| **フロントエンド** | React + Vite（Web管理画面付属）|
+| **多言語** | 日本語・英語（react-i18next）|
+| **デプロイ** | Docker / Docker Compose 対応 |
+| **ライセンス** | MIT |
+
+---
+
+### セキュリティ対策
+
+企業利用を前提としたセキュリティを標準実装しています。
+
+| 対策 | 内容 |
+|------|------|
+| XSS対策 | 全入力値のHTMLエンティティエスケープ |
+| SQLインジェクション対策 | Drizzle ORM のパラメータ化クエリ（全エンドポイント） |
+| レート制限 | 15分あたり100リクエスト（認証エンドポイントは10回） |
+| セキュリティヘッダー | Helmet.js による CSP・X-Content-Type-Options・X-Frame-Options 等 |
+| CORS制御 | 許可オリジンのホワイトリスト管理 |
+| データ暗号化 | AES-256-GCM による機密データの暗号化保存 |
+| 依存関係 | `pnpm audit` で既知の脆弱性ゼロを確認済み |
+
+---
+
+### セットアップ
 
 #### 必要なもの
 
-- [Node.js 18以上](https://nodejs.org/) — JavaScriptを動かす環境
-- [pnpm](https://pnpm.io/) — パッケージマネージャー（`npm install -g pnpm` でインストール）
-- [Docker](https://www.docker.com/) — データベースを動かすために必要
+- [Node.js 18以上](https://nodejs.org/)
+- [pnpm](https://pnpm.io/)（`npm install -g pnpm`）
+- [Docker](https://www.docker.com/)
 
-#### 手順
+#### インストール手順
 
-**1. このリポジトリをダウンロード**
 ```bash
+# 1. リポジトリをクローン
 git clone https://github.com/naotantan/company-cli.git
 cd company-cli
-```
 
-**2. 必要なパッケージをインストール**
-```bash
+# 2. 依存関係をインストール
 pnpm install
-```
 
-**3. 設定ファイルを作成**
-```bash
+# 3. 環境変数を設定
 cp .env.example packages/api/.env
-```
+# packages/api/.env を編集して API_KEY_SALT と ENCRYPTION_KEY を設定
 
-`.env` ファイルを開いて、以下を設定してください：
-
-```env
-# データベース接続先（そのままでOK）
-DATABASE_URL=postgresql://company:changeme@localhost:5432/company
-
-# セキュリティ用キー（自分で決めた文字列を設定）
-API_KEY_SALT=ここに好きな文字列を入力
-ENCRYPTION_KEY=32文字以上の好きな文字列を入力してください
-```
-
-**4. データベースを起動**
-```bash
+# 4. データベースを起動
 docker compose up -d
-```
 
-**5. データベースの初期設定**
-```bash
+# 5. マイグレーションを実行
 pnpm --filter @company/db migrate
-```
 
-**6. APIサーバーを起動**
-```bash
+# 6. APIサーバーを起動（ポート3000）
 pnpm --filter @company/api dev
-```
 
-ブラウザで `http://localhost:3000/health` を開いて `{"status":"ok"}` と表示されれば成功です！
-
-**7. Web管理画面を起動（オプション）**
-```bash
+# 7. Web管理画面を起動（ポート5173・オプション）
 pnpm --filter @company/ui dev
 ```
 
-ブラウザで `http://localhost:5173` を開くと管理画面が表示されます。
+動作確認: `http://localhost:3000/health` → `{"status":"ok","database":"connected"}`
 
-### 最初のユーザー登録
+#### 最初の会社登録・APIキー取得
 
 ```bash
-# 会社を登録してAPIキーを取得
 curl -X POST http://localhost:3000/api/auth/register \
   -H "Content-Type: application/json" \
-  -d '{"name": "My Company", "email": "admin@example.com", "password": "yourpassword"}'
+  -d '{"name": "株式会社Example", "email": "admin@example.com", "password": "yourpassword"}'
 ```
 
-レスポンスに含まれる `apiKey`（`comp_live_...` で始まる文字列）を控えておいてください。
-以降のAPIリクエストは全てこのキーを使います。
+レスポンスの `apiKey`（`comp_live_...`）を保存してください。以降の全リクエストで使用します。
 
-```bash
-# APIキーを使ってエージェント一覧を取得
-curl http://localhost:3000/api/agents \
-  -H "Authorization: Bearer comp_live_YOUR_KEY_HERE"
-```
+---
 
-### 主要なAPI一覧
+### 主要APIエンドポイント
 
-| HTTPメソッド | パス | 説明 |
-|------------|------|------|
-| GET | `/health` | サーバーの動作確認（認証不要） |
-| POST | `/api/auth/register` | ユーザー・会社の新規登録 |
+| メソッド | パス | 用途 |
+|---------|------|------|
+| GET | `/health` | 死活監視（認証不要） |
+| POST | `/api/auth/register` | 会社・ユーザー登録 |
 | POST | `/api/auth/login` | ログイン・APIキー取得 |
-| GET/POST | `/api/agents` | エージェント一覧・新規作成 |
-| GET/POST | `/api/issues` | タスク一覧・新規作成 |
-| GET/POST | `/api/goals` | 目標一覧・新規作成 |
-| GET/POST | `/api/projects` | プロジェクト一覧・新規作成 |
-| GET/POST | `/api/costs` | コスト一覧・記録 |
-| GET/POST | `/api/plugins` | プラグイン一覧・作成 |
+| GET/POST | `/api/agents` | エージェント一覧・登録 |
+| GET/POST | `/api/issues` | タスク一覧・作成（自動アサイン） |
+| GET/POST | `/api/goals` | 目標一覧・設定 |
+| POST | `/api/goals/:id/recalculate` | 達成率を再計算 |
+| GET/POST | `/api/projects` | プロジェクト管理 |
+| GET/POST | `/api/costs` | コスト記録・集計 |
+| GET/POST | `/api/plugins` | プラグイン管理 |
+| GET/POST | `/api/plugins/:id/webhooks` | Webhook設定 |
+| GET | `/api/activity` | 全操作ログ取得 |
 
-### テストの実行
+---
 
-```bash
-# 全テストを実行
-pnpm test
+### お問い合わせ
 
-# カバレッジ付きテスト（packages/api のみ）
-pnpm --filter @company/api test --coverage
-```
+GitHub Issues または Pull Request でご連絡ください。
 
-### セキュリティについて
-
-このシステムはW9セキュリティ強化フェーズで以下のセキュリティ対策を実装しています：
-
-- **XSS対策**: 全入力値のHTMLエンティティエスケープ
-- **SQLインジェクション対策**: Drizzle ORM のパラメータ化クエリ
-- **レート制限**: 15分あたり100リクエスト（認証エンドポイントは10回）
-- **セキュリティヘッダー**: Helmet.js による CSP・X-Content-Type-Options 等
-- **CORS**: 許可オリジンのホワイトリスト制御
-- **依存関係**: pnpm audit で脆弱性ゼロを確認済み
-
-### よくある質問
-
-**Q: Docker を使わずに動かせる？**
-A: PostgreSQL を直接インストールしても使えます。`DATABASE_URL` に接続先を設定してください。
-
-**Q: ポートを変えたい**
-A: `.env` ファイルの `PORT` を変更してください（デフォルト: 3000）。
-
-**Q: データを全部消してやり直したい**
-A: `docker compose down -v` でコンテナとデータを削除してから `docker compose up -d` で再起動できます。
+---
 
 ---
 
 ## English
 
-### What is this?
+### The Problem
 
-company-cli is a full-stack company management system compatible with the Paperclip v0.3.1 API.
-It provides tools to manage AI agents, tasks (issues), goals, projects, and costs — all through a REST API and a React web interface.
+Adopting AI agents in business operations often runs into the same obstacles:
 
-This is especially useful if you want to build and run a "virtual company" powered by AI agents.
+- **No visibility** — Agents run silently, and when something goes wrong there's no trace of what happened
+- **Runaway costs** — API fees accumulate with no automatic safeguard to stop overspending
+- **Integration friction** — Connecting AI workflows to Slack, Notion, or GitHub requires custom development every time
+- **No human oversight** — Agents execute tasks without human approval, creating risk of errors going unnoticed
 
-### Features
+**company-cli** addresses all of these in a single backend platform, compatible with the Paperclip v0.3.1 API.
 
-#### AI Agent Management
-Register and monitor multiple AI agents (Claude, GPT, Gemini, etc.) from a single interface.
-If an agent crashes, it **automatically restarts**. If it exceeds your budget, it **automatically stops**.
-You always know which agent is doing what — so you can safely hand off automated work to AI without worrying about runaway processes or costs.
+---
 
-#### Issue (Task) Tracking
-Create a task and it gets **automatically assigned** to a registered agent.
-You can add an approval step so a human confirms before the AI acts — useful when you want AI to do the work but keep humans in the loop.
-Link tasks to goals to keep every piece of work tied to a bigger purpose.
+### Business Value
 
-#### Goal Management
-Define a goal like "reduce monthly API cost by 10%" or "resolve 90% of issues this week."
-As tasks get completed, the **progress percentage updates automatically** — no manual reporting needed.
-You can always see exactly how far along you are toward each goal.
+#### 1. Safe, Reliable AI Agent Operations
 
-#### Project & Cost Tracking
-Track AI API costs per project so you always know what you're spending.
-Set up recurring routines (daily summaries, weekly reviews, etc.) so nothing falls through the cracks.
+Manage multiple AI agents (Claude, GPT, Gemini, etc.) from one place.
 
-#### Plugin & Webhook Integration
-Connect to Slack, Notion, GitHub, or any service that accepts webhooks.
-For example: "notify Slack when an agent completes a task" — no custom code required, just configure it through the API.
+- **Auto-restart on crash**: Agents recover immediately without human intervention — run 24/7 with confidence
+- **Budget-based auto-stop**: Set a spending limit and agents halt automatically when it's reached — no surprise invoices
+- **Heartbeat monitoring**: Status is checked every 60 seconds; anomalies are detected and surfaced instantly
 
-#### Full Activity Log
-Every action — who did what, when — is recorded automatically.
-When something goes wrong, you can trace exactly what the AI changed and when, making debugging fast and reliable.
+> **Impact**: Eliminate "runaway AI," unattended processes, and cost overruns — structurally, not by manual monitoring.
 
-### Tech Stack
+#### 2. Task Automation with Human-in-the-Loop Approval
 
-| Layer | Technology |
-|-------|------------|
-| API Server | Node.js + TypeScript + Express.js |
-| Database | PostgreSQL 17 (Docker) + Drizzle ORM |
-| Frontend | React + Vite + TypeScript |
-| CLI | Node.js command-line tool |
-| Auth | API key authentication (Bearer token) |
-| Package Manager | pnpm (monorepo) |
+Create a task (Issue) and it is **automatically assigned** to an available agent.
+
+- **Auto-assignment**: No manual delegation — the system routes work to the right agent
+- **Approval gates**: Require human sign-off before an agent executes a task — keep critical decisions in human hands
+- **Goal linkage**: Every task is connected to a business objective, so nothing is done without a reason
+
+> **Impact**: Automate confidently without surrendering control. Teams can set the threshold for when human review is required.
+
+#### 3. Real-Time Goal Progress Tracking
+
+Register KPIs such as "resolve 90% of issues this week" or "keep monthly AI spend under $500."
+Progress **updates automatically** as tasks are completed — no manual aggregation.
+
+- Eliminate weekly status-reporting overhead
+- Provide live data for management dashboards and client reporting
+
+> **Impact**: Save hours of manual reporting per week. Eliminate spreadsheet errors.
+
+#### 4. No-Code Integration with Existing Tools
+
+Connect to Slack, Notion, GitHub, Zapier, or any Webhook-capable service.
+
+- Agent completes a task → send Slack notification
+- Budget threshold hit → email the team lead
+- Issue created → open a GitHub ticket automatically
+
+Configuration is API-only. No custom code required.
+
+> **Impact**: Plug AI workflows into the tools your team already uses — no rearchitecting required.
+
+#### 5. Immutable Audit Trail
+
+Every operation — human or AI — is logged automatically with a timestamp.
+
+- Full traceability of what each agent changed and when
+- Supports compliance, incident investigation, and internal audits
+
+> **Impact**: Maintain accountability and governance as AI takes on more operational responsibility.
+
+---
+
+### Use Cases
+
+| Scenario | How it works |
+|----------|-------------|
+| **Internal helpdesk automation** | Log user queries as Issues → AI agent drafts responses → human approves and sends |
+| **Automated weekly reports** | Schedule a Routine every Monday → agent collects data → posts summary to Slack |
+| **AI cost governance** | Record API spend per project → auto-generate monthly cost reports |
+| **Multi-agent pipelines** | Chain research, writing, and review agents to automate content production end-to-end |
+
+---
+
+### Technical Specifications
+
+| Item | Spec |
+|------|------|
+| **API Protocol** | REST API (JSON) |
+| **Authentication** | API key (Bearer token) |
+| **Compatibility** | Paperclip v0.3.1 API compatible |
+| **Database** | PostgreSQL 17 |
+| **Server** | Node.js 18+ / Express.js |
+| **Frontend** | React + Vite (Web dashboard included) |
+| **Internationalization** | Japanese / English (react-i18next) |
+| **Deployment** | Docker / Docker Compose ready |
+| **License** | MIT |
+
+---
+
+### Security
+
+Enterprise-grade security is built in by default.
+
+| Measure | Implementation |
+|---------|---------------|
+| XSS Prevention | HTML entity escaping on all user inputs |
+| SQL Injection Prevention | Parameterized queries via Drizzle ORM across all endpoints |
+| Rate Limiting | 100 requests / 15 min global; 10 requests / 15 min on auth endpoints |
+| Security Headers | Helmet.js — CSP, X-Content-Type-Options, X-Frame-Options, etc. |
+| CORS Control | Whitelist-based allowed origins |
+| Data Encryption | AES-256-GCM for sensitive data at rest |
+| Dependency Audit | Zero known vulnerabilities verified by `pnpm audit` |
+
+---
 
 ### Getting Started
 
 #### Prerequisites
 
 - [Node.js 18+](https://nodejs.org/)
-- [pnpm](https://pnpm.io/) — Install with `npm install -g pnpm`
-- [Docker](https://www.docker.com/) — For the PostgreSQL database
+- [pnpm](https://pnpm.io/) — `npm install -g pnpm`
+- [Docker](https://www.docker.com/)
 
 #### Installation
 
-**Step 1: Clone the repository**
 ```bash
+# 1. Clone the repository
 git clone https://github.com/naotantan/company-cli.git
 cd company-cli
-```
 
-**Step 2: Install dependencies**
-```bash
+# 2. Install dependencies
 pnpm install
-```
 
-**Step 3: Configure environment variables**
-```bash
+# 3. Configure environment variables
 cp .env.example packages/api/.env
-```
+# Edit packages/api/.env — set API_KEY_SALT and ENCRYPTION_KEY
 
-Edit `packages/api/.env` and set the following required values:
-
-```env
-# Database connection (default works with Docker setup)
-DATABASE_URL=postgresql://company:changeme@localhost:5432/company
-
-# Security keys (set your own strings)
-API_KEY_SALT=any-random-string-here
-ENCRYPTION_KEY=must-be-at-least-32-characters-long
-```
-
-**Step 4: Start the database**
-```bash
+# 4. Start the database
 docker compose up -d
-```
 
-**Step 5: Run database migrations**
-```bash
+# 5. Run database migrations
 pnpm --filter @company/db migrate
-```
 
-**Step 6: Start the API server**
-```bash
+# 6. Start the API server (port 3000)
 pnpm --filter @company/api dev
-```
 
-Visit `http://localhost:3000/health` — you should see `{"status":"ok","database":"connected"}`.
-
-**Step 7 (Optional): Start the Web UI**
-```bash
+# 7. Start the Web dashboard (port 5173 — optional)
 pnpm --filter @company/ui dev
 ```
 
-Visit `http://localhost:5173` to access the management dashboard.
+Verify: `http://localhost:3000/health` → `{"status":"ok","database":"connected"}`
 
-### First Steps: Register Your Company
+#### Register Your Organization
 
 ```bash
-# Register a new company and get your API key
 curl -X POST http://localhost:3000/api/auth/register \
   -H "Content-Type: application/json" \
-  -d '{"name": "My Company", "email": "admin@example.com", "password": "yourpassword"}'
+  -d '{"name": "Acme Corp", "email": "admin@acme.com", "password": "yourpassword"}'
 ```
 
-Save the `apiKey` from the response (it starts with `comp_live_`). You'll need it for all API calls.
+Save the `apiKey` from the response (prefix: `comp_live_`). All subsequent requests require this key.
 
-```bash
-# Use your API key to list agents
-curl http://localhost:3000/api/agents \
-  -H "Authorization: Bearer comp_live_YOUR_KEY_HERE"
-```
+---
 
 ### API Reference
 
-All authenticated endpoints require the header: `Authorization: Bearer <api_key>`
+All authenticated requests require: `Authorization: Bearer <api_key>`
 
 | Method | Path | Description |
 |--------|------|-------------|
-| GET | `/health` | Health check (no auth required) |
-| POST | `/api/auth/register` | Register company + user |
-| POST | `/api/auth/login` | Login and get API key |
-| GET/POST | `/api/agents` | List / create agents |
-| GET/POST | `/api/issues` | List / create issues (auto-assigns to agents) |
-| POST | `/api/issues/:id/goals` | Link issue to a goal |
+| GET | `/health` | Health check (no auth) |
+| POST | `/api/auth/register` | Register organization + user |
+| POST | `/api/auth/login` | Login and retrieve API key |
+| GET/POST | `/api/agents` | List / register agents |
+| GET/POST | `/api/issues` | List / create tasks (auto-assigned) |
+| POST | `/api/issues/:id/goals` | Link task to goal |
 | GET/POST | `/api/goals` | List / create goals |
 | POST | `/api/goals/:id/recalculate` | Recalculate goal progress |
-| GET/POST | `/api/projects` | List / create projects |
+| GET/POST | `/api/projects` | List / manage projects |
 | GET/POST | `/api/costs` | List / record costs |
-| GET/POST | `/api/routines` | List / create routines |
-| GET | `/api/approvals` | List approval requests |
-| GET | `/api/activity` | Activity log |
 | GET/POST | `/api/plugins` | List / create plugins |
-| GET/POST | `/api/plugins/:id/webhooks` | List / create webhooks |
+| GET/POST | `/api/plugins/:id/webhooks` | Configure webhooks |
+| GET | `/api/activity` | Retrieve full activity log |
 
-### Running Tests
-
-```bash
-# Run all tests
-pnpm test
-
-# Run tests with coverage (api package only)
-pnpm --filter @company/api test --coverage
-```
-
-### Project Structure
-
-```
-company-cli/
-├── packages/
-│   ├── shared/     # Shared types and utilities
-│   ├── db/         # Drizzle ORM schema and migrations
-│   ├── api/        # Express.js REST API server
-│   ├── cli/        # Command-line interface
-│   ├── ui/         # React web frontend
-│   ├── adapters/   # External AI adapter integrations
-│   └── i18n/       # Internationalization (ja/en)
-├── docker-compose.yml
-├── .env.example
-└── package.json
-```
+---
 
 ### Environment Variables
 
@@ -364,36 +387,30 @@ company-cli/
 | `NODE_ENV` | Environment (`development` / `production`) | `development` |
 | `ENABLE_ENGINE` | Enable heartbeat engine | `false` |
 | `API_KEY_SALT` | Salt for API key hashing | **Required** |
-| `ENCRYPTION_KEY` | Key for data encryption (32+ chars) | **Required** |
-| `RATE_LIMIT_MAX` | Max requests per 15 min window | `100` (prod) / `1000` (dev) |
+| `ENCRYPTION_KEY` | Encryption key (32+ characters) | **Required** |
+| `RATE_LIMIT_MAX` | Max requests per 15 min | `100` (prod) / `1000` (dev) |
 | `CORS_ORIGIN` | Allowed CORS origins (comma-separated) | `http://localhost:5173` |
-
-### Security
-
-This system has been hardened in the W9 security phase:
-
-- **XSS Prevention**: All inputs are HTML-entity escaped
-- **SQL Injection Prevention**: Parameterized queries via Drizzle ORM
-- **Rate Limiting**: 100 requests / 15 min (10 for auth endpoints)
-- **Security Headers**: Helmet.js with CSP, X-Content-Type-Options, etc.
-- **CORS**: Whitelist-based origin control
-- **Dependencies**: Zero known vulnerabilities (verified by `pnpm audit`)
-
-### License
-
-MIT
 
 ---
 
-## パッケージ構成 / Package Structure
+### Project Structure
 
 ```
-packages/
-├── shared/     # 共通型・ユーティリティ / Shared types & utils
-├── db/         # DB スキーマ・マイグレーション / Schema & migrations
-├── api/        # REST API サーバー / REST API server (port 3000)
-├── cli/        # CLI ツール / CLI tool
-├── ui/         # Web UI (React) / Web UI (port 5173)
-├── adapters/   # AIアダプター / AI adapters
-└── i18n/       # 多言語対応 / i18n (ja/en)
+company-cli/
+├── packages/
+│   ├── shared/     # Shared types and utilities
+│   ├── db/         # Drizzle ORM schema and migrations
+│   ├── api/        # Express.js REST API server
+│   ├── cli/        # Command-line interface
+│   ├── ui/         # React web dashboard
+│   ├── adapters/   # AI adapter integrations (Claude, GPT, Gemini, etc.)
+│   └── i18n/       # Localization files (ja / en)
+├── docker-compose.yml
+└── .env.example
 ```
+
+---
+
+### Contact
+
+Issues and pull requests are welcome via GitHub.
