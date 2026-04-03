@@ -1,7 +1,8 @@
 import { useQuery } from 'react-query';
 import { useTranslation } from '@company/i18n';
 import api from '../lib/api.ts';
-import { Alert, LoadingSpinner } from '../components/ui';
+import { formatDate } from '../lib/date.ts';
+import { Alert, EmptyState, LoadingSpinner } from '../components/ui';
 
 interface ActivityLog {
   id: string;
@@ -47,13 +48,13 @@ export default function ActivityPage() {
                   )}
                 </div>
                 <div className="text-right">
-                  <p className="text-xs text-slate-400">{activity.created_at}</p>
+                  <p className="text-xs text-slate-400">{formatDate(activity.created_at)}</p>
                 </div>
               </div>
             </div>
           ))
         ) : (
-          <p className="text-slate-400">{t('activity.noActivity')}</p>
+          <EmptyState icon="📋" title={t('activity.noActivity')} />
         )}
       </div>
     </div>

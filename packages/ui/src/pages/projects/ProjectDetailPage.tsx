@@ -2,6 +2,7 @@ import { useParams } from 'react-router-dom';
 import { useQuery } from 'react-query';
 import { useTranslation } from '@company/i18n';
 import api from '../../lib/api.ts';
+import { formatDate } from '../../lib/date.ts';
 import { Alert, LoadingSpinner } from '../../components/ui';
 
 interface ProjectDetail {
@@ -40,7 +41,7 @@ export default function ProjectDetailPage() {
         >
           {data?.status === 'active' ? t('projects.active') : t('projects.archived')}
         </span>
-        <span>{data?.created_at}</span>
+        <span>{formatDate(data?.created_at)}</span>
       </div>
     </div>
   );

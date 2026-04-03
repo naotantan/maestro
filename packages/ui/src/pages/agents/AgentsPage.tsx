@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { type AgentType } from '@company/shared';
 import { useTranslation } from '@company/i18n';
 import api from '../../lib/api.ts';
+import { formatDate } from '../../lib/date.ts';
 import { Button, Card, CardBody, Badge, LoadingSpinner, EmptyState, Alert } from '../../components/ui';
 
 interface Agent {
@@ -299,7 +300,7 @@ export default function AgentsPage() {
                       <p className="line-clamp-2 text-sm text-slate-300">{agent.description}</p>
                     )}
 
-                    <div className="grid grid-cols-2 gap-3 rounded-2xl border border-slate-700 bg-slate-900/70 p-3 text-sm">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 rounded-2xl border border-slate-700 bg-slate-900/70 p-3 text-sm">
                       <div>
                         <p className="text-xs uppercase tracking-[0.2em] text-slate-500">{t('agents.heartbeat')}</p>
                         <p className={`mt-2 font-medium ${heartbeat.tone}`}>{heartbeat.label}</p>
@@ -317,7 +318,7 @@ export default function AgentsPage() {
                     <div className="mt-auto flex items-center justify-between border-t border-slate-700 pt-3 text-xs text-slate-500">
                       <span>
                         {agent.last_heartbeat_at
-                          ? t('agents.lastHeartbeatValue', { value: agent.last_heartbeat_at })
+                          ? t('agents.lastHeartbeatValue', { value: formatDate(agent.last_heartbeat_at) })
                           : t('agents.heartbeatMissing')}
                       </span>
                       <Badge variant={heartbeat.badge}>{heartbeat.label}</Badge>

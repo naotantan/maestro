@@ -5,6 +5,7 @@ import { useTranslation } from '@company/i18n';
 import { ArrowRight, CheckCircle2, Clock3, UserRound } from 'lucide-react';
 import { clsx } from 'clsx';
 import api from '../../lib/api.ts';
+import { formatDate } from '../../lib/date.ts';
 import {
   Alert,
   Badge,
@@ -303,7 +304,7 @@ export default function ApprovalsPage() {
                         </p>
                         <p>
                           {t('approvals.issueCreatedAtValue', {
-                            value: issue?.created_at ?? t('approvals.notAvailable'),
+                            value: issue?.created_at ? formatDate(issue.created_at) : t('approvals.notAvailable'),
                           })}
                         </p>
                       </div>
@@ -326,10 +327,10 @@ export default function ApprovalsPage() {
                         <div className="flex items-start gap-3">
                           <Clock3 className="mt-0.5 h-4 w-4 text-slate-500" />
                           <div>
-                            <p>{t('approvals.createdAtValue', { value: approval.created_at })}</p>
+                            <p>{t('approvals.createdAtValue', { value: formatDate(approval.created_at) })}</p>
                             <p className="text-xs text-slate-500">
                               {approval.decided_at
-                                ? t('approvals.decidedAtValue', { value: approval.decided_at })
+                                ? t('approvals.decidedAtValue', { value: formatDate(approval.decided_at) })
                                 : t('approvals.undecided')}
                             </p>
                           </div>

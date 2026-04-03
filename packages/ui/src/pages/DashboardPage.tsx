@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Activity, ArrowRight, Bot, ClipboardList, ShieldCheck, Zap } from 'lucide-react';
 import { useTranslation } from '@company/i18n';
 import api from '../lib/api.ts';
+import { formatDate } from '../lib/date.ts';
 import {
   Card,
   CardBody,
@@ -262,7 +263,7 @@ export default function DashboardPage() {
                   <p className="text-slate-300 text-sm">
                     {activity.entity_type}: {activity.action}
                   </p>
-                  <span className="text-xs text-slate-500">{activity.created_at}</span>
+                  <span className="text-xs text-slate-500">{formatDate(activity.created_at)}</span>
                 </div>
               ))}
             </div>

@@ -751,3 +751,39 @@ No.003〜No.009（6ページ）の P0 バグ（APIレスポンス参照誤り・
 - **ProjectDetailPage の`goals[]`/`workspaces[]`**はAPIの `/projects/:id` レスポンスに含まれない。型・UIともに削除済み
 - ActivityPage の旧インターフェース（`Activity`型）は`ActivityLog`型に全面置き換え済み
 
+
+### 2026-04-04 Claude Code P1対応 — 日付フォーマット統一 + AgentDetailPage Alert化
+
+**作業者**: Claude Code
+
+#### 対応内容
+
+**1. 日付フォーマットユーティリティ作成**
+
+- `packages/ui/src/lib/date.ts` を新規作成
+- `formatDate(iso)`: ISO 8601 → `YYYY/MM/DD HH:mm`（ja-JP ロケール）
+- `formatDateOnly(iso)`: 日付のみ表示
+
+**2. 全ページに formatDate を適用**
+
+| ファイル | 対象フィールド |
+|---------|-------------|
+| `AgentsPage.tsx` | `last_heartbeat_at` |
+| `AgentDetailPage.tsx` | `created_at`, `updated_at`, `last_heartbeat_at`, `started_at`, `ended_at` |
+| `IssuesPage.tsx` | `created_at` |
+| `IssueDetailPage.tsx` | `created_at`（issue・comment） |
+| `ActivityPage.tsx` | `created_at` |
+| `ProjectsPage.tsx` | `created_at` |
+| `ProjectDetailPage.tsx` | `created_at` |
+| `DashboardPage.tsx` | `created_at`（activity） |
+| `OrgPage.tsx` | `created_at`（org・member・request） |
+| `ApprovalsPage.tsx` | `created_at`, `decided_at`, `issue.created_at` |
+
+**3. AgentDetailPage: not-found を Alert 化**
+
+- `<div className="text-red-400">` → `<Alert variant="danger" message={t('agents.notFound')} />`
+
+#### 検証
+
+- `pnpm --filter @company/ui exec tsc --noEmit`: **PASS（エラー0件）**
+

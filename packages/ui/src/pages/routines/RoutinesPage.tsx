@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { useQuery } from 'react-query';
+import { useQuery, useQueryClient } from 'react-query';
 import { useTranslation } from '@company/i18n';
 import api from '../../lib/api.ts';
-import { Alert, LoadingSpinner } from '../../components/ui';
+import { Alert, EmptyState, LoadingSpinner } from '../../components/ui';
 
 interface Routine {
   id: string;
@@ -16,6 +16,7 @@ interface Routine {
 
 export default function RoutinesPage() {
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
   const [runError, setRunError] = useState<string | null>(null);
   const { data: routines, isLoading, error } = useQuery<Routine[]>(
     'routines',
@@ -26,6 +27,7 @@ export default function RoutinesPage() {
     try {
       setRunError(null);
       await api.post(`/routines/${id}/run`);
+      queryClient.invalidateQueries('routines');
     } catch {
       setRunError(t('routines.runFailed'));
     }
@@ -64,7 +66,7 @@ export default function RoutinesPage() {
             </div>
           ))
         ) : (
-          <p className="text-slate-400">{t('routines.noRoutines')}</p>
+          <EmptyState icon="🔁" title={t('routines.noRoutines')} />
         )}
       </div>
     </div>

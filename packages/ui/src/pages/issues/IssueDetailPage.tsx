@@ -3,6 +3,8 @@ import { useParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from 'react-query';
 import { useTranslation } from '@company/i18n';
 import api from '../../lib/api.ts';
+import { formatDate } from '../../lib/date.ts';
+import { Alert } from '../../components/ui';
 
 // GET /api/issues/:id のレスポンス型（commentsは含まない）
 interface IssueDetail {
@@ -66,7 +68,7 @@ export default function IssueDetailPage() {
   };
 
   if (isLoading) return <div className="p-6">{t('common.loading')}</div>;
-  if (error) return <div className="p-6 text-red-400">{t('issues.notFound')}</div>;
+  if (error) return <div className="p-6"><Alert variant="danger" message={t('issues.notFound')} /></div>;
 
   const comments = commentsData ?? [];
 
@@ -75,7 +77,7 @@ export default function IssueDetailPage() {
       <div className="bg-slate-800 rounded-lg p-6 border border-slate-700">
         <p className="text-xs text-slate-500 mb-1">{data?.identifier}</p>
         <h1 className="text-3xl font-bold mb-2">{data?.title}</h1>
-        <p className="text-slate-400 text-sm mb-4">{data?.created_at}</p>
+        <p className="text-slate-400 text-sm mb-4">{formatDate(data?.created_at)}</p>
         <p className="text-slate-300 mb-6">{data?.description ?? t('issues.noDescription')}</p>
 
         <div className="flex gap-4">
@@ -108,7 +110,7 @@ export default function IssueDetailPage() {
           {commentsLoading ? (
             <p className="text-slate-400 text-sm">{t('common.loading')}</p>
           ) : commentsError ? (
-            <p className="text-red-400 text-sm">{t('issues.commentsFetchError')}</p>
+            <Alert variant="danger" message={t('issues.commentsFetchError')} />
           ) : comments.length > 0 ? (
             comments.map((comment) => (
               <div
@@ -117,7 +119,7 @@ export default function IssueDetailPage() {
               >
                 <p className="font-mono text-xs text-slate-400">{comment.author_id}</p>
                 <p className="text-slate-300 text-sm mt-1">{comment.body}</p>
-                <p className="text-xs text-slate-500 mt-2">{comment.created_at}</p>
+                <p className="text-xs text-slate-500 mt-2">{formatDate(comment.created_at)}</p>
               </div>
             ))
           ) : (
@@ -130,6 +132,7 @@ export default function IssueDetailPage() {
             value={newComment}
             onChange={(e) => setNewComment(e.target.value)}
             placeholder={t('issues.commentPlaceholder')}
+            aria-label={t('issues.commentPlaceholder')}
             className="w-full bg-slate-700 border border-slate-600 rounded px-3 py-2 text-white text-sm"
             rows={3}
           />

@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from 'react-query';
 import { Link } from 'react-router-dom';
 import { useTranslation } from '@company/i18n';
 import api from '../../lib/api.ts';
+import { formatDate } from '../../lib/date.ts';
 import { Button, Badge, Card, CardBody, LoadingSpinner, EmptyState, Alert } from '../../components/ui';
 import { clsx } from 'clsx';
 
@@ -130,6 +131,7 @@ export default function IssuesPage() {
             value={newTitle}
             onChange={(e) => setNewTitle(e.target.value)}
             placeholder={t('issues.titlePlaceholder')}
+            aria-label={t('issues.titlePlaceholder')}
             className="w-full bg-slate-700 border border-slate-600 rounded px-3 py-2 text-white text-sm"
           />
           <div className="flex gap-2">
@@ -159,11 +161,13 @@ export default function IssuesPage() {
           value={searchText}
           onChange={(e) => setSearchText(e.target.value)}
           placeholder={t('issues.searchPlaceholder')}
+          aria-label={t('issues.searchPlaceholder')}
           className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-white"
         />
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
+          aria-label={t('common.status')}
           className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-white"
         >
           <option value="all">{t('issues.allStatuses')}</option>
@@ -174,6 +178,7 @@ export default function IssuesPage() {
         <select
           value={priorityFilter}
           onChange={(e) => setPriorityFilter(e.target.value as 'all' | '3' | '2' | '1')}
+          aria-label={t('issues.priority')}
           className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-white"
         >
           <option value="all">{t('issues.allPriorities')}</option>
@@ -184,6 +189,7 @@ export default function IssuesPage() {
         <select
           value={assigneeFilter}
           onChange={(e) => setAssigneeFilter(e.target.value)}
+          aria-label={t('issues.assignee')}
           className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-white"
         >
           <option value="all">{t('issues.allAssignees')}</option>
@@ -215,7 +221,7 @@ export default function IssuesPage() {
                       {issue.title}
                     </h3>
                     <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-slate-500">
-                      <span>{issue.created_at}</span>
+                      <span>{formatDate(issue.created_at)}</span>
                       <span>•</span>
                       <span>
                         {issue.assigned_to

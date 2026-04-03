@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery, useQueryClient } from 'react-query';
 import { useTranslation } from '@company/i18n';
 import api from '../../lib/api.ts';
+import { Alert, LoadingSpinner } from '../../components/ui';
 
 // GET /api/plugins のレスポンス型
 interface Plugin {
@@ -49,8 +50,8 @@ export default function PluginsPage() {
     queryClient.invalidateQueries('plugins');
   };
 
-  if (isLoading) return <div className="p-6">{t('common.loading')}</div>;
-  if (error) return <div className="p-6 text-red-400">{t('plugins.fetchError')}</div>;
+  if (isLoading) return <div className="p-6"><LoadingSpinner text={t('common.loading')} /></div>;
+  if (error) return <div className="p-6"><Alert variant="danger" message={t('plugins.fetchError')} /></div>;
 
   return (
     <div className="p-6 space-y-6">

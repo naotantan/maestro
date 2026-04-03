@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { useQuery, useQueryClient } from 'react-query';
 import { useTranslation } from '@company/i18n';
 import api from '../../lib/api.ts';
+import { formatDate } from '../../lib/date.ts';
+import { Alert, LoadingSpinner } from '../../components/ui';
 
 // GET /api/org のレスポンス型
 interface OrgInfo {
@@ -80,8 +82,8 @@ export default function OrgPage() {
     }
   };
 
-  if (orgLoading) return <div className="p-6">{t('common.loading')}</div>;
-  if (orgError) return <div className="p-6 text-red-400">{t('org.fetchError')}</div>;
+  if (orgLoading) return <div className="p-6"><LoadingSpinner text={t('common.loading')} /></div>;
+  if (orgError) return <div className="p-6"><Alert variant="danger" message={t('org.fetchError')} /></div>;
 
   const memberList = members ?? [];
   const requests = (requestsData ?? []).filter((r) => r.status === 'pending');
@@ -96,7 +98,7 @@ export default function OrgPage() {
         {org?.description && (
           <p className="text-slate-300 text-sm mb-2">{org.description}</p>
         )}
-        <p className="text-slate-400 text-sm">{t('org.createdAtValue', { value: org?.created_at })}</p>
+        <p className="text-slate-400 text-sm">{t('org.createdAtValue', { value: formatDate(org?.created_at) })}</p>
       </div>
 
       {/* メンバー一覧 */}
@@ -105,7 +107,7 @@ export default function OrgPage() {
         {membersLoading ? (
           <p className="text-slate-400 text-sm">{t('common.loading')}</p>
         ) : membersError ? (
-          <p className="text-red-400 text-sm">{t('org.membersFetchError')}</p>
+          <Alert variant="danger" message={t('org.membersFetchError')} />
         ) : memberList.length > 0 ? (
           <div className="space-y-2">
             {memberList.map((member) => (
@@ -115,7 +117,7 @@ export default function OrgPage() {
               >
                 <div>
                   <p className="font-mono text-sm text-slate-300">{member.user_id}</p>
-                  <p className="text-xs text-slate-400">{t('org.joinedAtValue', { value: member.created_at })}</p>
+                  <p className="text-xs text-slate-400">{t('org.joinedAtValue', { value: formatDate(member.created_at) })}</p>
                 </div>
                 <span className="px-2 py-1 rounded text-xs bg-slate-700">
                   {member.role}
@@ -134,7 +136,7 @@ export default function OrgPage() {
         {requestsLoading ? (
           <p className="text-slate-400 text-sm">{t('common.loading')}</p>
         ) : requestsError ? (
-          <p className="text-red-400 text-sm">{t('org.requestsFetchError')}</p>
+          <Alert variant="danger" message={t('org.requestsFetchError')} />
         ) : requests.length > 0 ? (
           <div className="space-y-3">
             {requests.map((req) => (
@@ -147,7 +149,7 @@ export default function OrgPage() {
                   {req.message && (
                     <p className="text-xs text-slate-400 mt-1">{t('org.messageValue', { value: req.message })}</p>
                   )}
-                  <p className="text-xs text-slate-400">{t('org.requestedAtValue', { value: req.created_at })}</p>
+                  <p className="text-xs text-slate-400">{t('org.requestedAtValue', { value: formatDate(req.created_at) })}</p>
                 </div>
                 <div className="flex gap-2 ml-4">
                   <button

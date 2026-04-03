@@ -3,6 +3,7 @@ import { useQuery } from 'react-query';
 import { type AgentType } from '@company/shared';
 import { useTranslation } from '@company/i18n';
 import api from '../../lib/api.ts';
+import { formatDate } from '../../lib/date.ts';
 import { Alert, Badge, Card, CardBody, CardHeader, EmptyState, LoadingSpinner } from '../../components/ui';
 
 interface AgentDetail {
@@ -74,7 +75,7 @@ export default function AgentDetailPage() {
   );
 
   if (isLoading) return <div className="p-6"><LoadingSpinner text={t('agents.detailLoading')} /></div>;
-  if (error || !agent) return <div className="p-6 text-red-400">{t('agents.notFound')}</div>;
+  if (error || !agent) return <div className="p-6"><Alert variant="danger" message={t('agents.notFound')} /></div>;
 
   const heartbeat = heartbeatBadge(agent, t);
   const configEntries = Object.entries(agent.config ?? {});
@@ -115,15 +116,15 @@ export default function AgentDetailPage() {
             </div>
             <div className="rounded-xl border border-slate-700 bg-slate-900/60 p-4">
               <p className="text-xs uppercase tracking-[0.2em] text-slate-500">{t('common.createdAt')}</p>
-              <p className="mt-2 text-slate-200">{agent.created_at}</p>
+              <p className="mt-2 text-slate-200">{formatDate(agent.created_at)}</p>
             </div>
             <div className="rounded-xl border border-slate-700 bg-slate-900/60 p-4">
               <p className="text-xs uppercase tracking-[0.2em] text-slate-500">{t('common.updatedAt')}</p>
-              <p className="mt-2 text-slate-200">{agent.updated_at}</p>
+              <p className="mt-2 text-slate-200">{formatDate(agent.updated_at)}</p>
             </div>
             <div className="rounded-xl border border-slate-700 bg-slate-900/60 p-4 md:col-span-2">
               <p className="text-xs uppercase tracking-[0.2em] text-slate-500">{t('agents.lastHeartbeat')}</p>
-              <p className="mt-2 text-slate-200">{agent.last_heartbeat_at ?? t('agents.notReceived')}</p>
+              <p className="mt-2 text-slate-200">{agent.last_heartbeat_at ? formatDate(agent.last_heartbeat_at) : t('agents.notReceived')}</p>
             </div>
           </CardBody>
         </Card>
@@ -167,8 +168,8 @@ export default function AgentDetailPage() {
                 >
                   <div className="min-w-0">
                     <p className="truncate text-sm font-medium text-slate-100">{run.id}</p>
-                    <p className="mt-1 text-xs text-slate-500">{t('agents.runStartedAt', { value: run.started_at })}</p>
-                    <p className="mt-1 text-xs text-slate-500">{t('agents.runEndedAt', { value: run.ended_at ?? t('agents.runInProgress') })}</p>
+                    <p className="mt-1 text-xs text-slate-500">{t('agents.runStartedAt', { value: formatDate(run.started_at) })}</p>
+                    <p className="mt-1 text-xs text-slate-500">{t('agents.runEndedAt', { value: run.ended_at ? formatDate(run.ended_at) : t('agents.runInProgress') })}</p>
                   </div>
                   <div className="flex items-center gap-3">
                     <Badge variant={run.status === 'completed' ? 'success' : run.status === 'running' ? 'info' : 'warning'}>

@@ -1,7 +1,8 @@
 import { useQuery } from 'react-query';
 import { useTranslation } from '@company/i18n';
 import api from '../../lib/api.ts';
-import { Alert, LoadingSpinner } from '../../components/ui';
+import { formatDateOnly } from '../../lib/date.ts';
+import { Alert, EmptyState, LoadingSpinner } from '../../components/ui';
 
 interface Goal {
   id: string;
@@ -33,16 +34,16 @@ export default function GoalsPage() {
         </button>
       </div>
 
-      <div className="space-y-3">
-        {goals && goals.length > 0 ? (
-          goals.map((goal) => (
+      {goals && goals.length > 0 ? (
+        <div className="space-y-3">
+          {goals.map((goal) => (
             <div
               key={goal.id}
               className="bg-slate-800 rounded-lg p-4 border border-slate-700"
             >
               <div className="flex justify-between items-start mb-2">
                 <h3 className="font-bold">{goal.name}</h3>
-                <span className="text-xs text-slate-400">{goal.deadline ?? '—'}</span>
+                <span className="text-xs text-slate-400">{formatDateOnly(goal.deadline)}</span>
               </div>
               {goal.description && (
                 <p className="text-sm text-slate-400">{goal.description}</p>
@@ -57,11 +58,11 @@ export default function GoalsPage() {
                 {goal.status}
               </span>
             </div>
-          ))
-        ) : (
-          <p className="text-slate-400">{t('goals.noGoals')}</p>
-        )}
-      </div>
+          ))}
+        </div>
+      ) : (
+        <EmptyState icon="🎯" title={t('goals.noGoals')} />
+      )}
     </div>
   );
 }

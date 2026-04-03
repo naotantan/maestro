@@ -2,7 +2,8 @@ import { useQuery } from 'react-query';
 import { Link } from 'react-router-dom';
 import { useTranslation } from '@company/i18n';
 import api from '../../lib/api.ts';
-import { Alert, LoadingSpinner } from '../../components/ui';
+import { formatDate } from '../../lib/date.ts';
+import { Alert, EmptyState, LoadingSpinner } from '../../components/ui';
 
 interface Project {
   id: string;
@@ -32,9 +33,9 @@ export default function ProjectsPage() {
         </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {projects && projects.length > 0 ? (
-          projects.map((project) => (
+      {projects && projects.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {projects.map((project) => (
             <Link
               key={project.id}
               to={`/projects/${project.id}`}
@@ -43,7 +44,7 @@ export default function ProjectsPage() {
               <h3 className="text-lg font-bold mb-1">{project.name}</h3>
               <p className="text-slate-400 text-sm mb-3">{project.description}</p>
               <div className="flex justify-between items-center text-xs">
-                <span className="text-slate-400">{project.created_at}</span>
+                <span className="text-slate-400">{formatDate(project.created_at)}</span>
                 <span
                   className={`px-2 py-1 rounded ${
                     project.status === 'active'
@@ -55,11 +56,11 @@ export default function ProjectsPage() {
                 </span>
               </div>
             </Link>
-          ))
-        ) : (
-          <p className="text-slate-400">{t('projects.noProjects')}</p>
-        )}
-      </div>
+          ))}
+        </div>
+      ) : (
+        <EmptyState icon="📁" title={t('projects.noProjects')} />
+      )}
     </div>
   );
 }

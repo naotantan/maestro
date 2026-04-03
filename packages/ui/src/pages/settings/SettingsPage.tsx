@@ -280,6 +280,7 @@ export default function SettingsPage() {
         <select
           value={language}
           onChange={(e) => setLanguage(e.target.value)}
+          aria-label={t('settings.language')}
           className="w-full bg-slate-700 border border-slate-600 rounded px-3 py-2 text-white"
         >
           <option value="ja">{t('settings.languageJa')}</option>
@@ -315,7 +316,7 @@ export default function SettingsPage() {
         {backupEnabled && (
           <div className="space-y-4 border-t border-slate-700 pt-4">
             {/* スケジュール */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium mb-1">{t('settings.backupSchedule')}</label>
                 <select
@@ -423,7 +424,7 @@ export default function SettingsPage() {
             )}
 
             {/* オプション */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium mb-1">{t('settings.backupCompression')}</label>
                 <select

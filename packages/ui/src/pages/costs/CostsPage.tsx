@@ -1,6 +1,7 @@
 import { useQuery } from 'react-query';
 import { useTranslation } from '@company/i18n';
 import api from '../../lib/api.ts';
+import { Alert, LoadingSpinner } from '../../components/ui';
 
 // GET /api/costs のレスポンス型
 interface CostEvent {
@@ -41,8 +42,8 @@ export default function CostsPage() {
   // 合計コストをクライアント側で計算
   const totalUsd = (events ?? []).reduce((sum, e) => sum + parseFloat(e.cost_usd || '0'), 0);
 
-  if (eventsLoading) return <div className="p-6">{t('common.loading')}</div>;
-  if (eventsError) return <div className="p-6 text-red-400">{t('costs.fetchError')}</div>;
+  if (eventsLoading) return <div className="p-6"><LoadingSpinner text={t('common.loading')} /></div>;
+  if (eventsError) return <div className="p-6"><Alert variant="danger" message={t('costs.fetchError')} /></div>;
 
   return (
     <div className="p-6 space-y-6">
@@ -97,7 +98,7 @@ export default function CostsPage() {
           {policiesLoading ? (
             <p className="text-slate-400 text-sm">{t('common.loading')}</p>
           ) : policiesError ? (
-            <p className="text-red-400 text-sm">{t('costs.budgetFetchError')}</p>
+            <Alert variant="danger" message={t('costs.budgetFetchError')} />
           ) : (policies ?? []).length > 0 ? (
             <div className="space-y-3">
               {(policies ?? []).map((policy) => (
