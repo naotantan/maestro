@@ -4,6 +4,29 @@ import { eq, gte, desc, and } from 'drizzle-orm';
 
 export const costsRouter: RouterType = Router();
 
+function parseBudgetDecimal(value: unknown, scale: number): string | null {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) {
+    return null;
+  }
+
+  return parsed.toFixed(scale);
+}
+
+function normalizeAlertThreshold(value: unknown): string | null {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) {
+    return null;
+  }
+
+  const normalized = parsed > 1 ? parsed / 100 : parsed;
+  if (normalized < 0 || normalized > 1) {
+    return null;
+  }
+
+  return normalized.toFixed(2);
+}
+
 // GET /api/costs — コスト集計
 costsRouter.get('/', async (req, res, next) => {
   try {
@@ -105,14 +128,36 @@ costsRouter.post('/budget', async (req, res, next) => {
       });
       return;
     }
+
+    const normalizedLimit = parseBudgetDecimal(limit_amount_usd, 2);
+    if (!normalizedLimit || Number(normalizedLimit) <= 0) {
+      res.status(400).json({
+        error: 'validation_failed',
+        message: 'limit_amount_usd は 0 より大きい数値である必要があります',
+      });
+      return;
+    }
+
+    const normalizedThreshold = alert_threshold === undefined
+      ? undefined
+      : normalizeAlertThreshold(alert_threshold);
+
+    if (alert_threshold !== undefined && normalizedThreshold === null) {
+      res.status(400).json({
+        error: 'validation_failed',
+        message: 'alert_threshold は 0.00〜1.00 または 0〜100 の範囲で指定してください',
+      });
+      return;
+    }
+
     const db = getDb();
     const policy = await db
       .insert(budget_policies)
       .values({
         company_id: req.companyId!,
-        limit_amount_usd: parseFloat(String(limit_amount_usd)).toFixed(2),
+        limit_amount_usd: normalizedLimit,
         period,
-        ...(alert_threshold && { alert_threshold: parseFloat(String(alert_threshold)).toFixed(2) }),
+        ...(normalizedThreshold !== undefined ? { alert_threshold: normalizedThreshold } : {}),
       })
       .returning();
     res.status(201).json({ data: policy[0] });
