@@ -297,8 +297,8 @@ export default function SettingsPage() {
       {/* バックアップ設定 */}
       <div className="bg-slate-800 rounded-lg p-6 border border-slate-700 space-y-4">
         <div>
-          <h2 className="text-lg font-bold">バックアップ設定</h2>
-          <p className="text-sm text-slate-400 mt-1">データベースの自動バックアップスケジュールと保存先を設定します</p>
+          <h2 className="text-lg font-bold">{t('settings.backup')}</h2>
+          <p className="text-sm text-slate-400 mt-1">{t('settings.backupDesc')}</p>
         </div>
 
         {/* バックアップ有効化 */}
@@ -309,7 +309,7 @@ export default function SettingsPage() {
             onChange={(e) => setBackupEnabled(e.target.checked)}
             className="w-4 h-4 accent-sky-500"
           />
-          <span className="font-medium">バックアップを有効にする</span>
+          <span className="font-medium">{t('settings.backupEnable')}</span>
         </label>
 
         {backupEnabled && (
@@ -317,19 +317,19 @@ export default function SettingsPage() {
             {/* スケジュール */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium mb-1">スケジュール</label>
+                <label className="block text-sm font-medium mb-1">{t('settings.backupSchedule')}</label>
                 <select
                   value={backupScheduleType}
                   onChange={(e) => setBackupScheduleType(e.target.value)}
                   className="w-full bg-slate-700 border border-slate-600 rounded px-3 py-2 text-white"
                 >
-                  <option value="daily">毎日</option>
-                  <option value="weekly">毎週</option>
-                  <option value="monthly">毎月</option>
+                  <option value="daily">{t('settings.backupScheduleDaily')}</option>
+                  <option value="weekly">{t('settings.backupScheduleWeekly')}</option>
+                  <option value="monthly">{t('settings.backupScheduleMonthly')}</option>
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">実行時刻</label>
+                <label className="block text-sm font-medium mb-1">{t('settings.backupTime')}</label>
                 <input
                   type="time"
                   value={backupScheduleTime}
@@ -341,40 +341,37 @@ export default function SettingsPage() {
 
             {/* 保持期間 */}
             <div>
-              <label className="block text-sm font-medium mb-1">保持期間</label>
+              <label className="block text-sm font-medium mb-1">{t('settings.backupRetention')}</label>
               <select
                 value={backupRetentionDays}
                 onChange={(e) => setBackupRetentionDays(Number(e.target.value))}
                 className="w-full bg-slate-700 border border-slate-600 rounded px-3 py-2 text-white"
               >
-                <option value={7}>7日間</option>
-                <option value={14}>14日間</option>
-                <option value={30}>30日間</option>
-                <option value={60}>60日間</option>
-                <option value={90}>90日間</option>
-                <option value={180}>180日間</option>
-                <option value={365}>365日間（1年）</option>
+                {[7, 14, 30, 60, 90, 180].map((d) => (
+                  <option key={d} value={d}>{t('settings.backupRetentionDays', { days: d })}</option>
+                ))}
+                <option value={365}>{t('settings.backupRetentionYear')}</option>
               </select>
             </div>
 
             {/* バックアップ先 */}
             <div>
-              <label className="block text-sm font-medium mb-1">バックアップ先</label>
+              <label className="block text-sm font-medium mb-1">{t('settings.backupDestination')}</label>
               <select
                 value={backupDestinationType}
                 onChange={(e) => setBackupDestinationType(e.target.value)}
                 className="w-full bg-slate-700 border border-slate-600 rounded px-3 py-2 text-white"
               >
-                <option value="local">ローカルパス</option>
-                <option value="s3">Amazon S3</option>
-                <option value="gcs">Google Cloud Storage</option>
+                <option value="local">{t('settings.backupDestinationLocal')}</option>
+                <option value="s3">{t('settings.backupDestinationS3')}</option>
+                <option value="gcs">{t('settings.backupDestinationGcs')}</option>
               </select>
             </div>
 
             {/* ローカルパス */}
             {backupDestinationType === 'local' && (
               <div>
-                <label className="block text-sm font-medium mb-1">ローカルパス</label>
+                <label className="block text-sm font-medium mb-1">{t('settings.backupLocalPath')}</label>
                 <input
                   type="text"
                   value={backupLocalPath}
@@ -389,7 +386,7 @@ export default function SettingsPage() {
             {backupDestinationType === 's3' && (
               <div className="space-y-3">
                 <div>
-                  <label className="block text-sm font-medium mb-1">S3 バケット名</label>
+                  <label className="block text-sm font-medium mb-1">{t('settings.backupS3Bucket')}</label>
                   <input
                     type="text"
                     value={backupS3Bucket}
@@ -399,7 +396,7 @@ export default function SettingsPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">S3 リージョン</label>
+                  <label className="block text-sm font-medium mb-1">{t('settings.backupS3Region')}</label>
                   <input
                     type="text"
                     value={backupS3Region}
@@ -414,7 +411,7 @@ export default function SettingsPage() {
             {/* GCS設定 */}
             {backupDestinationType === 'gcs' && (
               <div>
-                <label className="block text-sm font-medium mb-1">GCS バケット名</label>
+                <label className="block text-sm font-medium mb-1">{t('settings.backupGcsBucket')}</label>
                 <input
                   type="text"
                   value={backupGcsBucket}
@@ -428,14 +425,14 @@ export default function SettingsPage() {
             {/* オプション */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium mb-1">圧縮</label>
+                <label className="block text-sm font-medium mb-1">{t('settings.backupCompression')}</label>
                 <select
                   value={backupCompression}
                   onChange={(e) => setBackupCompression(e.target.value)}
                   className="w-full bg-slate-700 border border-slate-600 rounded px-3 py-2 text-white"
                 >
-                  <option value="gzip">gzip（推奨）</option>
-                  <option value="none">なし</option>
+                  <option value="gzip">{t('settings.backupCompressionGzip')}</option>
+                  <option value="none">{t('settings.backupCompressionNone')}</option>
                 </select>
               </div>
               <div className="flex items-end pb-2">
@@ -446,7 +443,7 @@ export default function SettingsPage() {
                     onChange={(e) => setBackupEncryption(e.target.checked)}
                     className="w-4 h-4 accent-sky-500"
                   />
-                  <span className="text-sm font-medium">暗号化（AES-256）</span>
+                  <span className="text-sm font-medium">{t('settings.backupEncryption')}</span>
                 </label>
               </div>
             </div>
@@ -460,16 +457,16 @@ export default function SettingsPage() {
                   onChange={(e) => setBackupIncludeActivityLog(e.target.checked)}
                   className="w-4 h-4 accent-sky-500"
                 />
-                <span className="text-sm font-medium">アクティビティログを含める</span>
-                <span className="text-xs text-slate-400">（大容量になる場合があります）</span>
+                <span className="text-sm font-medium">{t('settings.backupIncludeActivityLog')}</span>
+                <span className="text-xs text-slate-400">{t('settings.backupIncludeActivityLogNote')}</span>
               </label>
             </div>
 
             {/* 通知設定 */}
             <div className="space-y-3 border-t border-slate-700 pt-4">
-              <h3 className="text-sm font-semibold text-slate-300">通知設定</h3>
+              <h3 className="text-sm font-semibold text-slate-300">{t('settings.backupNotifications')}</h3>
               <div>
-                <label className="block text-sm font-medium mb-1">通知先メールアドレス</label>
+                <label className="block text-sm font-medium mb-1">{t('settings.backupNotifyEmail')}</label>
                 <input
                   type="email"
                   value={backupNotifyEmail}
@@ -486,7 +483,7 @@ export default function SettingsPage() {
                     onChange={(e) => setBackupNotifyOnFailure(e.target.checked)}
                     className="w-4 h-4 accent-sky-500"
                   />
-                  <span className="text-sm">失敗時に通知</span>
+                  <span className="text-sm">{t('settings.backupNotifyOnFailure')}</span>
                 </label>
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
@@ -495,7 +492,7 @@ export default function SettingsPage() {
                     onChange={(e) => setBackupNotifyOnSuccess(e.target.checked)}
                     className="w-4 h-4 accent-sky-500"
                   />
-                  <span className="text-sm">成功時に通知</span>
+                  <span className="text-sm">{t('settings.backupNotifyOnSuccess')}</span>
                 </label>
               </div>
             </div>
@@ -507,7 +504,7 @@ export default function SettingsPage() {
           disabled={saving === 'backup'}
           className="bg-sky-600 hover:bg-sky-700 disabled:opacity-50 px-4 py-2 rounded font-medium transition-colors"
         >
-          {saving === 'backup' ? '保存中...' : '保存'}
+          {saving === 'backup' ? t('common.loading') : t('common.save')}
         </button>
       </div>
     </div>
