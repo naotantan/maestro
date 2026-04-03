@@ -10,16 +10,19 @@ export interface ApiErrorResponse {
 export async function apiRequest<T>(
   method: string,
   path: string,
-  apiKey: string,
+  apiKey?: string,
   body?: unknown,
 ): Promise<T> {
   const url = `${getApiUrl()}${path}`;
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+  if (apiKey) {
+    headers.Authorization = `Bearer ${apiKey}`;
+  }
   const response = await fetch(url, {
     method,
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${apiKey}`,
-    },
+    headers,
     body: body ? JSON.stringify(body) : undefined,
   });
 
