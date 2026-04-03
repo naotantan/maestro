@@ -234,7 +234,9 @@
     "deadline": "期限",
     "progress": "進捗",
     "progressValue": "進捗: {{value}}%",
-    "noGoals": "ゴールはまだありません"
+    "noGoals": "ゴールはまだありません",
+    "loading": "ゴールを読み込み中...",
+    "loadError": "ゴールの読み込みに失敗しました"
   },
   "projects": {
     "title": "プロジェクト",
@@ -246,7 +248,9 @@
     "noWorkspaces": "ワークスペースはありません",
     "active": "アクティブ",
     "archived": "アーカイブ",
-    "noProjects": "プロジェクトはまだありません"
+    "noProjects": "プロジェクトはまだありません",
+    "loading": "プロジェクトを読み込み中...",
+    "loadError": "プロジェクトの読み込みに失敗しました"
   },
   "routines": {
     "title": "ルーティン",
@@ -255,7 +259,10 @@
     "lastRun": "最終実行",
     "scheduleValue": "スケジュール: {{value}}",
     "lastRunValue": "最終実行: {{value}}",
-    "noRoutines": "ルーティンはまだありません"
+    "noRoutines": "ルーティンはまだありません",
+    "loading": "ルーティンを読み込み中...",
+    "loadError": "ルーティンの読み込みに失敗しました",
+    "runFailed": "実行に失敗しました"
   },
   "approvals": {
     "title": "承認",
@@ -441,6 +448,8 @@
     "unreadOnly": "未読のみ",
     "noUnread": "未読はありません",
     "noMessages": "メッセージはありません",
+    "notAvailable": "受信箱は現在利用できません",
+    "notAvailableDescription": "この機能は現在実装されていません",
     "type": {
       "mention": "メンション",
       "assignment": "アサイン",
@@ -456,6 +465,8 @@
     "entityId": "対象ID",
     "actorValue": "実行者: {{actor}}",
     "noActivity": "アクティビティの記録はありません",
+    "loading": "アクティビティを読み込み中...",
+    "loadError": "アクティビティの読み込みに失敗しました",
     "actions": {
       "create": "作成",
       "update": "更新",

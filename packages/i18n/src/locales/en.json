@@ -234,7 +234,9 @@
     "deadline": "Deadline",
     "progress": "Progress",
     "progressValue": "Progress: {{value}}%",
-    "noGoals": "No goals yet"
+    "noGoals": "No goals yet",
+    "loading": "Loading goals...",
+    "loadError": "Failed to load goals"
   },
   "projects": {
     "title": "Projects",
@@ -246,7 +248,9 @@
     "noWorkspaces": "No workspaces",
     "active": "Active",
     "archived": "Archived",
-    "noProjects": "No projects yet"
+    "noProjects": "No projects yet",
+    "loading": "Loading projects...",
+    "loadError": "Failed to load projects"
   },
   "routines": {
     "title": "Routines",
@@ -255,7 +259,10 @@
     "lastRun": "Last Run",
     "scheduleValue": "Schedule: {{value}}",
     "lastRunValue": "Last run: {{value}}",
-    "noRoutines": "No routines yet"
+    "noRoutines": "No routines yet",
+    "loading": "Loading routines...",
+    "loadError": "Failed to load routines",
+    "runFailed": "Failed to run routine"
   },
   "approvals": {
     "title": "Approvals",
@@ -441,6 +448,8 @@
     "unreadOnly": "Unread only",
     "noUnread": "No unread items",
     "noMessages": "No messages",
+    "notAvailable": "Inbox is not available",
+    "notAvailableDescription": "This feature is not currently implemented",
     "type": {
       "mention": "Mention",
       "assignment": "Assignment",
@@ -456,6 +465,8 @@
     "entityId": "Entity ID",
     "actorValue": "Actor: {{actor}}",
     "noActivity": "No activity recorded yet",
+    "loading": "Loading activity...",
+    "loadError": "Failed to load activity",
     "actions": {
       "create": "Created",
       "update": "Updated",

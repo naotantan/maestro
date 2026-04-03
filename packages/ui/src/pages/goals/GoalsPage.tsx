@@ -1,25 +1,28 @@
 import { useQuery } from 'react-query';
-import { Link } from 'react-router-dom';
 import { useTranslation } from '@company/i18n';
 import api from '../../lib/api.ts';
+import { Alert, LoadingSpinner } from '../../components/ui';
 
 interface Goal {
   id: string;
-  title: string;
-  progress: number;
+  company_id: string;
+  name: string;
+  description: string | null;
+  deadline: string | null;
   status: string;
-  dueDate: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export default function GoalsPage() {
   const { t } = useTranslation();
   const { data: goals, isLoading, error } = useQuery<Goal[]>(
     'goals',
-    () => api.get('/goals').then((r) => r.data),
+    () => api.get('/goals').then((r) => r.data.data),
   );
 
-  if (isLoading) return <div className="p-6">{t('common.loading')}</div>;
-  if (error) return <div className="p-6 text-red-400">{t('errors.serverError')}</div>;
+  if (isLoading) return <LoadingSpinner text={t('goals.loading')} />;
+  if (error) return <div className="p-6"><Alert variant="danger" message={t('goals.loadError')} /></div>;
 
   return (
     <div className="p-6 space-y-6">
@@ -38,18 +41,21 @@ export default function GoalsPage() {
               className="bg-slate-800 rounded-lg p-4 border border-slate-700"
             >
               <div className="flex justify-between items-start mb-2">
-                <h3 className="font-bold">{goal.title}</h3>
-                <span className="text-xs text-slate-400">{goal.dueDate}</span>
+                <h3 className="font-bold">{goal.name}</h3>
+                <span className="text-xs text-slate-400">{goal.deadline ?? '—'}</span>
               </div>
-              <div className="w-full bg-slate-700 rounded h-2">
-                <div
-                  className="bg-sky-600 h-2 rounded transition-all"
-                  style={{ width: `${goal.progress}%` }}
-                ></div>
-              </div>
-              <p className="text-xs text-slate-400 mt-2">
-                {t('goals.progressValue', { value: goal.progress })}
-              </p>
+              {goal.description && (
+                <p className="text-sm text-slate-400">{goal.description}</p>
+              )}
+              <span
+                className={`inline-block mt-2 px-2 py-1 rounded text-xs ${
+                  goal.status === 'active'
+                    ? 'bg-green-900 text-green-200'
+                    : 'bg-slate-700 text-slate-300'
+                }`}
+              >
+                {goal.status}
+              </span>
             </div>
           ))
         ) : (

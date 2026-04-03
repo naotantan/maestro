@@ -1,25 +1,28 @@
 import { useQuery } from 'react-query';
 import { useTranslation } from '@company/i18n';
 import api from '../lib/api.ts';
+import { Alert, LoadingSpinner } from '../components/ui';
 
-interface Activity {
+interface ActivityLog {
   id: string;
-  type: string;
-  title: string;
-  description: string;
-  timestamp: string;
-  actor: string;
+  company_id: string;
+  actor_id: string | null;
+  entity_type: string;
+  entity_id: string | null;
+  action: string;
+  changes: unknown;
+  created_at: string;
 }
 
 export default function ActivityPage() {
   const { t } = useTranslation();
-  const { data: activities, isLoading, error } = useQuery<Activity[]>(
+  const { data: activities, isLoading, error } = useQuery<ActivityLog[]>(
     'activity',
-    () => api.get('/activity').then((r) => r.data),
+    () => api.get('/activity').then((r) => r.data.data),
   );
 
-  if (isLoading) return <div className="p-6">{t('common.loading')}</div>;
-  if (error) return <div className="p-6 text-red-400">{t('errors.serverError')}</div>;
+  if (isLoading) return <LoadingSpinner text={t('activity.loading')} />;
+  if (error) return <div className="p-6"><Alert variant="danger" message={t('activity.loadError')} /></div>;
 
   return (
     <div className="p-6 space-y-6">
@@ -34,17 +37,17 @@ export default function ActivityPage() {
             >
               <div className="flex justify-between items-start">
                 <div>
-                  <h3 className="font-bold">{activity.title}</h3>
-                  <p className="text-slate-400 text-sm">{activity.description}</p>
-                  <p className="text-xs text-slate-500 mt-2">
-                    {t('activity.actorValue', { actor: activity.actor })}
-                  </p>
+                  <h3 className="font-bold">
+                    {activity.entity_type} — {activity.action}
+                  </h3>
+                  {activity.actor_id && (
+                    <p className="text-xs text-slate-500 mt-1">
+                      {t('activity.actorValue', { actor: activity.actor_id })}
+                    </p>
+                  )}
                 </div>
                 <div className="text-right">
-                  <span className="inline-block px-2 py-1 rounded text-xs bg-slate-700">
-                    {activity.type}
-                  </span>
-                  <p className="text-xs text-slate-400 mt-2">{activity.timestamp}</p>
+                  <p className="text-xs text-slate-400">{activity.created_at}</p>
                 </div>
               </div>
             </div>

@@ -2,14 +2,16 @@ import { useParams } from 'react-router-dom';
 import { useQuery } from 'react-query';
 import { useTranslation } from '@company/i18n';
 import api from '../../lib/api.ts';
+import { Alert, LoadingSpinner } from '../../components/ui';
 
 interface ProjectDetail {
   id: string;
+  company_id: string;
   name: string;
-  description: string;
+  description: string | null;
   status: string;
-  goals: { id: string; title: string }[];
-  workspaces: { id: string; name: string }[];
+  created_at: string;
+  updated_at: string;
 }
 
 export default function ProjectDetailPage() {
@@ -17,48 +19,28 @@ export default function ProjectDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { data, isLoading, error } = useQuery<ProjectDetail>(
     ['project', id],
-    () => api.get(`/projects/${id}`).then((r) => r.data),
+    () => api.get(`/projects/${id}`).then((r) => r.data.data),
   );
 
-  if (isLoading) return <div className="p-6">{t('common.loading')}</div>;
+  if (isLoading) return <LoadingSpinner text={t('projects.loading')} />;
   if (error)
-    return <div className="p-6 text-red-400">{t('projects.notFound')}</div>;
+    return <div className="p-6"><Alert variant="danger" message={t('projects.notFound')} /></div>;
 
   return (
     <div className="p-6 space-y-6 max-w-4xl">
       <h1 className="text-3xl font-bold">{data?.name}</h1>
       <p className="text-slate-300">{data?.description}</p>
-
-      <div className="grid grid-cols-2 gap-6">
-        <div className="bg-slate-800 rounded-lg p-4 border border-slate-700">
-          <h2 className="text-lg font-bold mb-3">{t('projects.relatedGoals')}</h2>
-          <ul className="space-y-2">
-            {data?.goals && data.goals.length > 0 ? (
-              data.goals.map((goal) => (
-                <li key={goal.id} className="text-slate-300 text-sm">
-                  • {goal.title}
-                </li>
-              ))
-            ) : (
-              <p className="text-slate-400 text-sm">{t('projects.noGoals')}</p>
-            )}
-          </ul>
-        </div>
-
-        <div className="bg-slate-800 rounded-lg p-4 border border-slate-700">
-          <h2 className="text-lg font-bold mb-3">{t('projects.workspaces')}</h2>
-          <ul className="space-y-2">
-            {data?.workspaces && data.workspaces.length > 0 ? (
-              data.workspaces.map((workspace) => (
-                <li key={workspace.id} className="text-slate-300 text-sm">
-                  • {workspace.name}
-                </li>
-              ))
-            ) : (
-              <p className="text-slate-400 text-sm">{t('projects.noWorkspaces')}</p>
-            )}
-          </ul>
-        </div>
+      <div className="flex items-center gap-4 text-sm text-slate-400">
+        <span
+          className={`px-2 py-1 rounded text-xs ${
+            data?.status === 'active'
+              ? 'bg-green-900 text-green-200'
+              : 'bg-slate-700 text-slate-300'
+          }`}
+        >
+          {data?.status === 'active' ? t('projects.active') : t('projects.archived')}
+        </span>
+        <span>{data?.created_at}</span>
       </div>
     </div>
   );

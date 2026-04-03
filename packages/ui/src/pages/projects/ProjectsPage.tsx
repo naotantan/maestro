@@ -2,24 +2,26 @@ import { useQuery } from 'react-query';
 import { Link } from 'react-router-dom';
 import { useTranslation } from '@company/i18n';
 import api from '../../lib/api.ts';
+import { Alert, LoadingSpinner } from '../../components/ui';
 
 interface Project {
   id: string;
   name: string;
-  description: string;
+  description: string | null;
   status: string;
-  createdAt: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export default function ProjectsPage() {
   const { t } = useTranslation();
   const { data: projects, isLoading, error } = useQuery<Project[]>(
     'projects',
-    () => api.get('/projects').then((r) => r.data),
+    () => api.get('/projects').then((r) => r.data.data),
   );
 
-  if (isLoading) return <div className="p-6">{t('common.loading')}</div>;
-  if (error) return <div className="p-6 text-red-400">{t('errors.serverError')}</div>;
+  if (isLoading) return <LoadingSpinner text={t('projects.loading')} />;
+  if (error) return <div className="p-6"><Alert variant="danger" message={t('projects.loadError')} /></div>;
 
   return (
     <div className="p-6 space-y-6">
@@ -41,7 +43,7 @@ export default function ProjectsPage() {
               <h3 className="text-lg font-bold mb-1">{project.name}</h3>
               <p className="text-slate-400 text-sm mb-3">{project.description}</p>
               <div className="flex justify-between items-center text-xs">
-                <span className="text-slate-400">{project.createdAt}</span>
+                <span className="text-slate-400">{project.created_at}</span>
                 <span
                   className={`px-2 py-1 rounded ${
                     project.status === 'active'
