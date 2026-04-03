@@ -4,7 +4,9 @@ import { Pool } from 'pg';
 import path from 'path';
 import * as dotenv from 'dotenv';
 
-dotenv.config({ path: '../../.env' });
+const repoRoot = path.resolve(__dirname, '../../../');
+dotenv.config({ path: path.join(repoRoot, '.env') });
+dotenv.config({ path: path.join(repoRoot, '.env.development'), override: true });
 
 async function runMigrations() {
   const connectionString = process.env.DATABASE_URL;

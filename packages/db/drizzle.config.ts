@@ -1,9 +1,10 @@
 import type { Config } from 'drizzle-kit';
 import * as dotenv from 'dotenv';
+import path from 'path';
 
-// .env または .env.development を読み込む
-dotenv.config({ path: '../../.env' });
-dotenv.config({ path: '../../.env.development' });
+const repoRoot = path.resolve(__dirname, '../../');
+dotenv.config({ path: path.join(repoRoot, '.env') });
+dotenv.config({ path: path.join(repoRoot, '.env.development'), override: true });
 
 export default {
   schema: './src/schema/index.ts',

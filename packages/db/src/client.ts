@@ -1,6 +1,12 @@
+import path from 'path';
+import dotenv from 'dotenv';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
 import * as schema from './schema';
+
+const repoRoot = path.resolve(__dirname, '../../../');
+dotenv.config({ path: path.join(repoRoot, '.env') });
+dotenv.config({ path: path.join(repoRoot, '.env.development'), override: true });
 
 let pool: Pool | null = null;
 let db: ReturnType<typeof drizzle<typeof schema>> | null = null;

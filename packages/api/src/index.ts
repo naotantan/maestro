@@ -1,9 +1,14 @@
-import 'dotenv/config';
+import path from 'path';
+import dotenv from 'dotenv';
 import { createApp } from './server';
 import { closeDb } from '@company/db';
 import { startHeartbeatEngine, stopHeartbeatEngine } from './engine/heartbeat-engine';
 import { startCrashRecovery, stopCrashRecovery } from './engine/crash-recovery';
 import { startBudgetMonitor, stopBudgetMonitor } from './engine/budget-monitor';
+
+const repoRoot = path.resolve(__dirname, '../../../');
+dotenv.config({ path: path.join(repoRoot, '.env') });
+dotenv.config({ path: path.join(repoRoot, '.env.development'), override: true });
 
 const PORT = parseInt(process.env.PORT || '3000', 10);
 // 本番環境またはHEARTBEAT=trueの場合にエンジンを起動
