@@ -1,9 +1,36 @@
 import { Router, type Router as RouterType } from 'express';
-import { getDb, issues, issue_comments, issue_goals, agents } from '@company/db';
+import { getDb, issues, issue_comments, issue_goals, agents, goals } from '@company/db';
 import { eq, and, desc, sql } from 'drizzle-orm';
 import { sanitizeString, sanitizePagination } from '../middleware/validate';
 
 export const issuesRouter: RouterType = Router();
+
+async function findOwnedIssue(db: ReturnType<typeof getDb>, companyId: string, issueId: string) {
+  const rows = await db
+    .select({ id: issues.id })
+    .from(issues)
+    .where(and(eq(issues.id, issueId), eq(issues.company_id, companyId)))
+    .limit(1);
+  return rows[0] ?? null;
+}
+
+async function findOwnedGoal(db: ReturnType<typeof getDb>, companyId: string, goalId: string) {
+  const rows = await db
+    .select({ id: goals.id })
+    .from(goals)
+    .where(and(eq(goals.id, goalId), eq(goals.company_id, companyId)))
+    .limit(1);
+  return rows[0] ?? null;
+}
+
+async function findOwnedAgent(db: ReturnType<typeof getDb>, companyId: string, agentId: string) {
+  const rows = await db
+    .select({ id: agents.id })
+    .from(agents)
+    .where(and(eq(agents.id, agentId), eq(agents.company_id, companyId)))
+    .limit(1);
+  return rows[0] ?? null;
+}
 
 // GET /api/issues
 issuesRouter.get('/', async (req, res, next) => {
@@ -53,6 +80,13 @@ issuesRouter.post('/', async (req, res, next) => {
     const identifier = `COMP-${String(count + 1).padStart(3, '0')}`;
     // assigned_toが未指定の場合、有効なエージェントに自動アサイン
     let finalAssignedTo = assigned_to;
+    if (finalAssignedTo && !(await findOwnedAgent(db, req.companyId!, finalAssignedTo))) {
+      res.status(400).json({
+        error: 'validation_failed',
+        message: 'assigned_to が無効です',
+      });
+      return;
+    }
     if (!finalAssignedTo) {
       const availableAgents = await db
         .select({ id: agents.id })
@@ -74,6 +108,7 @@ issuesRouter.post('/', async (req, res, next) => {
         status,
         priority,
         assigned_to: finalAssignedTo,
+        created_by: req.userId,
       })
       .returning();
     res.status(201).json({ data: newIssue[0] });
@@ -117,14 +152,21 @@ issuesRouter.patch('/:issueId', async (req, res, next) => {
       assigned_to?: string;
     };
     const db = getDb();
+    if (assigned_to !== undefined && assigned_to !== null && assigned_to !== '' && !(await findOwnedAgent(db, req.companyId!, assigned_to))) {
+      res.status(400).json({
+        error: 'validation_failed',
+        message: 'assigned_to が無効です',
+      });
+      return;
+    }
     const updated = await db
       .update(issues)
       .set({
-        ...(title && { title }),
-        ...(description !== undefined && { description }),
+        ...(title && { title: sanitizeString(title) }),
+        ...(description !== undefined && { description: description ? sanitizeString(description) : description }),
         ...(status && { status }),
         ...(priority !== undefined && { priority }),
-        ...(assigned_to !== undefined && { assigned_to }),
+        ...(assigned_to !== undefined && { assigned_to: assigned_to || null }),
         updated_at: new Date(),
         ...(status === 'done' && { completed_at: new Date() }),
       })
@@ -167,6 +209,11 @@ issuesRouter.delete('/:issueId', async (req, res, next) => {
 issuesRouter.get('/:issueId/comments', async (req, res, next) => {
   try {
     const db = getDb();
+    const issue = await findOwnedIssue(db, req.companyId!, req.params.issueId);
+    if (!issue) {
+      res.status(404).json({ error: 'not_found', message: 'Issueが見つかりません' });
+      return;
+    }
     const comments = await db
       .select()
       .from(issue_comments)
@@ -182,6 +229,11 @@ issuesRouter.get('/:issueId/comments', async (req, res, next) => {
 issuesRouter.get('/:issueId/goals', async (req, res, next) => {
   try {
     const db = getDb();
+    const issue = await findOwnedIssue(db, req.companyId!, req.params.issueId);
+    if (!issue) {
+      res.status(404).json({ error: 'not_found', message: 'Issueが見つかりません' });
+      return;
+    }
     const links = await db
       .select()
       .from(issue_goals)
@@ -201,13 +253,14 @@ issuesRouter.post('/:issueId/goals', async (req, res, next) => {
       return;
     }
     const db = getDb();
-    // Issue の存在確認
-    const issueRows = await db.select({ id: issues.id })
-      .from(issues)
-      .where(and(eq(issues.id, req.params.issueId), eq(issues.company_id, req.companyId!)))
-      .limit(1);
-    if (!issueRows.length) {
+    const issue = await findOwnedIssue(db, req.companyId!, req.params.issueId);
+    if (!issue) {
       res.status(404).json({ error: 'not_found', message: 'Issueが見つかりません' });
+      return;
+    }
+    const goal = await findOwnedGoal(db, req.companyId!, goal_id);
+    if (!goal) {
+      res.status(404).json({ error: 'not_found', message: 'Goalが見つかりません' });
       return;
     }
     let link;
@@ -234,6 +287,16 @@ issuesRouter.post('/:issueId/goals', async (req, res, next) => {
 issuesRouter.delete('/:issueId/goals/:goalId', async (req, res, next) => {
   try {
     const db = getDb();
+    const issue = await findOwnedIssue(db, req.companyId!, req.params.issueId);
+    if (!issue) {
+      res.status(404).json({ error: 'not_found', message: 'Issueが見つかりません' });
+      return;
+    }
+    const goal = await findOwnedGoal(db, req.companyId!, req.params.goalId);
+    if (!goal) {
+      res.status(404).json({ error: 'not_found', message: 'Goalが見つかりません' });
+      return;
+    }
     await db.delete(issue_goals).where(
       and(
         eq(issue_goals.issue_id, req.params.issueId),
@@ -249,7 +312,7 @@ issuesRouter.delete('/:issueId/goals/:goalId', async (req, res, next) => {
 // POST /api/issues/:issueId/comments
 issuesRouter.post('/:issueId/comments', async (req, res, next) => {
   try {
-    const { body, author_id } = req.body as { body?: string; author_id?: string };
+    const { body } = req.body as { body?: string };
     if (!body) {
       res.status(400).json({
         error: 'validation_failed',
@@ -258,12 +321,24 @@ issuesRouter.post('/:issueId/comments', async (req, res, next) => {
       return;
     }
     const db = getDb();
+    const issue = await findOwnedIssue(db, req.companyId!, req.params.issueId);
+    if (!issue) {
+      res.status(404).json({ error: 'not_found', message: 'Issueが見つかりません' });
+      return;
+    }
+    if (!req.userId) {
+      res.status(403).json({
+        error: 'forbidden',
+        message: 'ユーザーに紐付くAPIキーでのみコメントを投稿できます',
+      });
+      return;
+    }
     const comment = await db
       .insert(issue_comments)
       .values({
         issue_id: req.params.issueId,
-        author_id: author_id || 'system',
-        body,
+        author_id: req.userId,
+        body: sanitizeString(body),
       })
       .returning();
     res.status(201).json({ data: comment[0] });

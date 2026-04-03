@@ -7,15 +7,11 @@ import { apiRequest } from '../api.js';
 
 interface RegisterResponse {
   apiKey: string;
-  user: {
-    id: string;
-    email: string;
-    name: string;
-  };
-  company: {
-    id: string;
-    name: string;
-  };
+  userId: string;
+  companyId: string;
+  email: string;
+  name: string;
+  companyName: string;
 }
 
 export const registerCommand = new Command('register')
@@ -88,7 +84,7 @@ export const registerCommand = new Command('register')
       const result = await apiRequest<RegisterResponse>(
         'POST',
         '/api/auth/register',
-        '', // no API key for registration
+        undefined,
         { email, password, name, companyName: company },
       );
 
@@ -105,9 +101,9 @@ export const registerCommand = new Command('register')
         createdAt: config?.createdAt ?? new Date().toISOString(),
       } as any);
 
-      console.log(chalk.green(`\n✅ ようこそ、${result.user.name}さん！`));
-      console.log(`企業: ${chalk.bold(result.company.name)}`);
-      console.log(`メール: ${chalk.gray(result.user.email)}`);
+      console.log(chalk.green(`\n✅ ようこそ、${result.name}さん！`));
+      console.log(`企業: ${chalk.bold(result.companyName)}`);
+      console.log(`メール: ${chalk.gray(result.email)}`);
       console.log(chalk.gray('\n認証情報をセットアップしました。\n'));
     } catch (error) {
       spinner.fail('登録失敗');

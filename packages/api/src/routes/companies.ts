@@ -76,12 +76,13 @@ companiesRouter.post('/:companyId/api-keys', async (req, res, next) => {
 
     const db = getDb();
     const { rawKey, keyHash, prefix } = await generateApiKey(API_KEY_PREFIXES.BOARD);
+    const keyName = req.userId ? `user:${req.userId}:${name}` : name;
 
     await db.insert(board_api_keys).values({
       company_id: companyId,
       key_hash: keyHash,
       key_prefix: prefix,
-      name,
+      name: keyName,
     });
 
     res.status(201).json({

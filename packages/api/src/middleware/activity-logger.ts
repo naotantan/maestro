@@ -68,7 +68,12 @@ export function activityLogger(req: Request, res: Response, next: NextFunction):
         entity_type: entityType,
         entity_id: entityId,
         action,
-        changes: { method: req.method, path: req.path },
+        changes: {
+          method: req.method,
+          path: req.path,
+          authKeyId: req.authKeyId,
+          authKeyName: req.authKeyName,
+        },
       })
       .catch(() => {
         // Activity記録の失敗はメインフローに影響させない

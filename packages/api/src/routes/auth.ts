@@ -3,12 +3,16 @@ import bcrypt from 'bcryptjs';
 import { v4 as uuidv4 } from 'uuid';
 import { getDb, users, company_memberships, companies, board_api_keys } from '@company/db';
 import { eq } from 'drizzle-orm';
-import { generateApiKey, hashApiKey } from '../utils/crypto';
+import { generateApiKey } from '../utils/crypto';
 import { API_KEY_PREFIXES } from '@company/shared';
 import { isValidEmail, isStrongPassword, sanitizeString } from '../middleware/validate';
 import { auditLog } from '../middleware/audit';
 
 export const authRouter: RouterType = Router();
+
+function buildUserScopedKeyName(userId: string, label: string): string {
+  return `user:${userId}:${label}`;
+}
 
 /**
  * POST /api/auth/register
@@ -110,7 +114,7 @@ authRouter.post('/register', async (req, res, next) => {
         company_id: companyId,
         key_hash: keyHash,
         key_prefix: prefix,
-        name: '初期キー',
+        name: buildUserScopedKeyName(userId, '初期キー'),
       });
 
       // 監査ログ
@@ -122,7 +126,20 @@ authRouter.post('/register', async (req, res, next) => {
       message: '登録が完了しました。',
       apiKey: rawKey,
       companyId,
+      companyName: sanitizedCompanyName,
       userId,
+      name: sanitizedName,
+      email,
+      user: {
+        id: userId,
+        email,
+        name: sanitizedName,
+      },
+      company: {
+        id: companyId,
+        name: sanitizedCompanyName,
+        role: 'admin',
+      },
       warning: 'このAPIキーは二度と表示されません。安全に保管してください。',
     });
   } catch (err) {
@@ -169,16 +186,55 @@ authRouter.post('/login', async (req, res, next) => {
 
     // ユーザーの所属企業を取得
     const memberships = await db
-      .select({ company_id: company_memberships.company_id, role: company_memberships.role })
+      .select({
+        companyId: company_memberships.company_id,
+        role: company_memberships.role,
+        companyName: companies.name,
+      })
       .from(company_memberships)
+      .innerJoin(companies, eq(company_memberships.company_id, companies.id))
       .where(eq(company_memberships.user_id, user.id))
-      .limit(1);
+      .limit(50);
+
+    if (memberships.length === 0) {
+      res.status(403).json({
+        error: 'no_company_membership',
+        message: '所属企業が見つかりません。',
+      });
+      return;
+    }
+
+    const primaryCompany = memberships[0];
+    const { rawKey, keyHash, prefix } = await generateApiKey(API_KEY_PREFIXES.BOARD);
+    await db.insert(board_api_keys).values({
+      company_id: primaryCompany.companyId,
+      key_hash: keyHash,
+      key_prefix: prefix,
+      name: buildUserScopedKeyName(user.id, 'login'),
+    });
 
     res.json({
+      apiKey: rawKey,
+      companyId: primaryCompany.companyId,
+      companyName: primaryCompany.companyName,
       userId: user.id,
       email: user.email,
       name: user.name,
-      companies: memberships,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+      },
+      company: {
+        id: primaryCompany.companyId,
+        name: primaryCompany.companyName,
+        role: primaryCompany.role,
+      },
+      companies: memberships.map((membership) => ({
+        id: membership.companyId,
+        name: membership.companyName,
+        role: membership.role,
+      })),
     });
   } catch (err) {
     next(err);

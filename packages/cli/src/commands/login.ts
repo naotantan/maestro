@@ -6,19 +6,17 @@ import { saveConfig, getConfig } from '../config.js';
 import { apiRequest } from '../api.js';
 
 interface LoginResponse {
-  user: {
-    id: string;
-    email: string;
-    name: string;
-  };
+  apiKey: string;
+  companyId: string;
+  companyName: string;
+  userId: string;
+  email: string;
+  name: string;
   companies: Array<{
     id: string;
     name: string;
+    role: string;
   }>;
-}
-
-interface ApiKeyResponse {
-  apiKey: string;
 }
 
 export const loginCommand = new Command('login')
@@ -68,62 +66,30 @@ export const loginCommand = new Command('login')
       const loginResult = await apiRequest<LoginResponse>(
         'POST',
         '/api/auth/login',
-        'temp',
+        undefined,
         { email, password },
       );
 
-      spinner.stop();
+      spinner.succeed('ログイン完了');
 
-      // 企業選択
-      if (loginResult.companies.length === 1) {
-        console.log(`企業: ${chalk.bold(loginResult.companies[0].name)}`);
-      } else {
-        const companyAnswers = await inquirer.prompt([
-          {
-            type: 'list',
-            name: 'companyId',
-            message: '企業を選択してください:',
-            choices: loginResult.companies.map((c) => ({
-              name: c.name,
-              value: c.id,
-            })),
-          },
-        ]);
+      const config = getConfig();
+      saveConfig({
+        ...(config || {}),
+        installMode: config?.installMode ?? 'docker',
+        apiUrl: config?.apiUrl ?? 'http://localhost:3000',
+        apiKey: loginResult.apiKey,
+        language: config?.language ?? 'ja',
+        version: config?.version ?? '0.1.0',
+        createdAt: config?.createdAt ?? new Date().toISOString(),
+      } as any);
 
-        spinner = ora('API キーを作成中...').start();
-
-        try {
-          const apiKeyResult = await apiRequest<ApiKeyResponse>(
-            'POST',
-            `/api/companies/${companyAnswers.companyId}/api-keys`,
-            'temp',
-            { name: 'CLI key' },
-          );
-
-          spinner.succeed('ログイン完了');
-
-          const config = getConfig();
-          saveConfig({
-            ...(config || {}),
-            installMode: config?.installMode ?? 'docker',
-            apiUrl: config?.apiUrl ?? 'http://localhost:3000',
-            apiKey: apiKeyResult.apiKey,
-            language: config?.language ?? 'ja',
-            version: config?.version ?? '0.1.0',
-            createdAt: config?.createdAt ?? new Date().toISOString(),
-          } as any);
-
-          console.log(chalk.green(`\n✅ ログインしました`));
-          console.log(`ユーザー: ${chalk.bold(loginResult.user.name)}`);
-          console.log(chalk.gray('\n認証情報を保存しました。\n'));
-        } catch (error) {
-          spinner.fail('API キー作成失敗');
-          if (error instanceof Error) {
-            console.error(chalk.red(`エラー: ${error.message}`));
-          }
-          process.exit(1);
-        }
+      console.log(chalk.green(`\n✅ ログインしました`));
+      console.log(`ユーザー: ${chalk.bold(loginResult.name)}`);
+      console.log(`企業: ${chalk.bold(loginResult.companyName)}`);
+      if (loginResult.companies.length > 1) {
+        console.log(chalk.yellow('複数の所属企業があるため、先頭の企業でAPIキーを発行しました。'));
       }
+      console.log(chalk.gray('\n認証情報を保存しました。\n'));
     } catch (error) {
       spinner.fail('ログイン失敗');
       if (error instanceof Error) {

@@ -5,6 +5,7 @@ import { authStore } from '../../stores/auth.ts';
 
 export default function RegisterPage() {
   const navigate = useNavigate();
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [companyName, setCompanyName] = useState('');
@@ -18,6 +19,7 @@ export default function RegisterPage() {
 
     try {
       const res = await api.post('/auth/register', {
+        name,
         email,
         password,
         companyName,
@@ -38,6 +40,16 @@ export default function RegisterPage() {
       <div className="bg-slate-800 p-8 rounded-lg shadow-lg w-96">
         <h1 className="text-2xl font-bold text-sky-400 mb-6">.company</h1>
         <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium mb-1">名前</label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full bg-slate-700 border border-slate-600 rounded px-3 py-2 text-white"
+              required
+            />
+          </div>
           <div>
             <label className="block text-sm font-medium mb-1">会社名</label>
             <input

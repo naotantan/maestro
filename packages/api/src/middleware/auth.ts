@@ -9,8 +9,15 @@ declare global {
     interface Request {
       companyId?: string;
       userId?: string;
+      authKeyId?: string;
+      authKeyName?: string;
     }
   }
+}
+
+function extractUserIdFromKeyName(name?: string | null): string | undefined {
+  const match = name?.match(/^user:([0-9a-f-]{36}):/i);
+  return match?.[1];
 }
 
 /**
@@ -57,10 +64,8 @@ export async function authMiddleware(
       .from(board_api_keys)
       .where(eq(board_api_keys.key_prefix, prefix));
 
-    // keysが配列であることを確認
     if (!Array.isArray(keys)) {
       logAuthFailure(req, 'db_error');
-      console.error('[DEBUG] keys is not array:', typeof keys, keys);
       res.status(401).json({
         error: 'invalid_api_key',
         message: '無効なAPIキーです。',
@@ -109,6 +114,9 @@ export async function authMiddleware(
     }
 
     req.companyId = matchedKey.company_id;
+    req.userId = extractUserIdFromKeyName(matchedKey.name);
+    req.authKeyId = matchedKey.id;
+    req.authKeyName = matchedKey.name ?? undefined;
 
     // last_used_at を非同期で更新（レスポンスをブロックしない）
     db.update(board_api_keys)
