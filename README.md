@@ -16,16 +16,31 @@ Paperclip（AIエージェントを使って会社を運営するツール）と
 
 ### 何ができるの？
 
-| 機能 | できること |
-|------|-----------|
-| **エージェント管理** | AIエージェントの登録・状態監視・自動再起動 |
-| **Issue（タスク）管理** | タスクの作成・担当者への自動割り当て・承認フロー |
-| **Goal（目標）管理** | 目標の設定・達成率の自動計算（タスク完了率から算出） |
-| **Project管理** | プロジェクト・コスト・定期ルーティンの管理 |
-| **Plugin連携** | 外部サービスへのWebhook送信 |
-| **Web管理画面** | ブラウザから全機能を操作できる管理画面 |
-| **活動ログ** | 全操作を自動で記録・追跡 |
-| **多言語対応** | 日本語・英語に対応（react-i18next） |
+#### AIエージェント管理
+複数のAIエージェント（Claude・GPT・Gemini など）をひとつの画面で登録・監視できます。
+エージェントが落ちたら**自動で再起動**し、予算上限を超えたら**自動で停止**します。
+「どのエージェントが今何をしているか」をリアルタイムで把握できるので、AIを使った業務自動化を安心して任せられます。
+
+#### Issue（タスク）管理
+タスクを登録すると、登録済みのエージェントに**自動で担当を割り当て**ます。
+タスクには承認フローを設定でき、「AIが実行していいか人間が確認する」という安全なワークフローを作れます。
+また、タスクを目標（Goal）と紐付けることで「この作業は何のためにやっているか」が明確になります。
+
+#### Goal（目標）管理
+「月間コスト削減10%」「Issue解決率90%以上」といった目標を登録しておくと、タスクの完了状況から**達成率を自動で計算**して更新します。
+「目標に対して今どこまで進んでいるか」が常に数字で見えるため、進捗報告の手間がなくなります。
+
+#### Project・コスト管理
+プロジェクトごとにAIの使用コスト（API費用など）を記録・追跡できます。
+毎日・毎週など定期的に繰り返すタスク（ルーティン）も登録でき、「忘れがちな定期作業」を自動化できます。
+
+#### Plugin・Webhook連携
+Slack・Notion・GitHub など外部サービスへのWebhookを設定できます。
+「エージェントがタスクを完了したらSlackに通知する」といった連携が、コードを書かずにAPIだけで実現できます。
+
+#### 全操作の自動ログ記録
+誰が・いつ・何をしたか、全ての操作を自動で記録します。
+「AIがいつ何を変更したか」のトレースができるため、AIが誤動作した際の原因調査が容易になります。
 
 ### 使っている技術
 
@@ -175,16 +190,32 @@ This is especially useful if you want to build and run a "virtual company" power
 
 ### Features
 
-| Feature | Description |
-|---------|-------------|
-| **Agent Management** | Register and monitor AI agents with automatic heartbeat and crash recovery |
-| **Issue Tracking** | Create tasks with automatic agent assignment and approval workflows |
-| **Goal Management** | Set goals with automatic progress calculation based on issue completion |
-| **Project Management** | Track projects, costs, and recurring routines |
-| **Plugin / Webhooks** | Send webhook events to external services |
-| **Web Dashboard** | Browser-based management interface |
-| **Activity Log** | Automatic logging of all operations |
-| **Multi-language** | Japanese and English support (react-i18next) |
+#### AI Agent Management
+Register and monitor multiple AI agents (Claude, GPT, Gemini, etc.) from a single interface.
+If an agent crashes, it **automatically restarts**. If it exceeds your budget, it **automatically stops**.
+You always know which agent is doing what — so you can safely hand off automated work to AI without worrying about runaway processes or costs.
+
+#### Issue (Task) Tracking
+Create a task and it gets **automatically assigned** to a registered agent.
+You can add an approval step so a human confirms before the AI acts — useful when you want AI to do the work but keep humans in the loop.
+Link tasks to goals to keep every piece of work tied to a bigger purpose.
+
+#### Goal Management
+Define a goal like "reduce monthly API cost by 10%" or "resolve 90% of issues this week."
+As tasks get completed, the **progress percentage updates automatically** — no manual reporting needed.
+You can always see exactly how far along you are toward each goal.
+
+#### Project & Cost Tracking
+Track AI API costs per project so you always know what you're spending.
+Set up recurring routines (daily summaries, weekly reviews, etc.) so nothing falls through the cracks.
+
+#### Plugin & Webhook Integration
+Connect to Slack, Notion, GitHub, or any service that accepts webhooks.
+For example: "notify Slack when an agent completes a task" — no custom code required, just configure it through the API.
+
+#### Full Activity Log
+Every action — who did what, when — is recorded automatically.
+When something goes wrong, you can trace exactly what the AI changed and when, making debugging fast and reliable.
 
 ### Tech Stack
 
