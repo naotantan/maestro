@@ -1,5 +1,5 @@
 import {
-  pgTable, text, varchar, integer, timestamp, uuid, index, primaryKey
+  pgTable, text, varchar, integer, timestamp, uuid, index, primaryKey, unique
 } from 'drizzle-orm/pg-core';
 import { companies } from './group-a';
 
@@ -21,6 +21,8 @@ export const issues = pgTable('issues', {
   idxCompany: index('idx_issues_company').on(table.company_id),
   idxIdentifier: index('idx_issues_identifier').on(table.identifier),
   idxStatus: index('idx_issues_status').on(table.status),
+  // 同一組織内で identifier が重複しないよう保証
+  uqIdentifier: unique('uq_issues_company_identifier').on(table.company_id, table.identifier),
 }));
 
 // C2: issue_comments
@@ -130,4 +132,6 @@ export const inbox_archives = pgTable('inbox_archives', {
   archived_at: timestamp('archived_at').defaultNow(),
 }, (table) => ({
   idxUser: index('idx_archived_user').on(table.user_id),
+  // 同一ユーザーが同一Issueを重複アーカイブしないよう保証
+  uqUserIssue: unique('uq_inbox_archives_user_issue').on(table.user_id, table.issue_id),
 }));

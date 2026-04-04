@@ -20,6 +20,7 @@ interface BackupConfig {
   s3Region?: string;
   gcsBucket?: string;
   localPath?: string;
+  gdriveFolderId?: string;   // Google Drive フォルダ ID（URLから抽出済み）
   includeActivityLog?: boolean;
   compression?: string;
   encryption?: boolean;
@@ -28,8 +29,11 @@ interface BackupConfig {
   notifyOnSuccess?: boolean;
 }
 
+// Google Drive フォルダ ID のフォーマット検証（英数字・ハイフン・アンダースコア）
+const GDRIVE_FOLDER_ID_REGEX = /^[a-zA-Z0-9_-]+$/;
+
 const VALID_SCHEDULE_TYPES = ['daily', 'weekly', 'monthly'];
-const VALID_DESTINATION_TYPES = ['local', 's3', 'gcs'];
+const VALID_DESTINATION_TYPES = ['local', 's3', 'gcs', 'gdrive'];
 const VALID_RETENTION_DAYS = [7, 14, 30, 60, 90, 180, 365];
 const VALID_COMPRESSION_TYPES = ['none', 'gzip'];
 // HH:mm 形式（00:00〜23:59）
@@ -43,7 +47,19 @@ const PATH_TRAVERSAL_REGEX = /\.\./;
 // destinationType に応じて追加フィールドが必須
 // 戻り値: エラーメッセージ文字列 or null（正常）
 function validateBackupConfig(backup: BackupConfig): string | null {
-  // enabled=false の場合は他フィールドのバリデーションをスキップ
+  // フォーマット検証は enabled に関わらず常に実施する
+  // gdriveFolderId フォーマット検証（英数字・ハイフン・アンダースコアのみ）
+  if (backup.gdriveFolderId !== undefined && backup.gdriveFolderId !== '') {
+    if (!GDRIVE_FOLDER_ID_REGEX.test(backup.gdriveFolderId)) {
+      return 'gdriveFolderId の形式が無効です（英数字・ハイフン・アンダースコアのみ）';
+    }
+  }
+  // localPath のパストラバーサル検証（enabled に関わらず）
+  if (backup.localPath !== undefined && PATH_TRAVERSAL_REGEX.test(backup.localPath)) {
+    return 'localPath に無効なパスが含まれています';
+  }
+
+  // enabled=false の場合はスケジュール・必須フィールドのバリデーションをスキップ
   if (backup.enabled === false) {
     return null;
   }
@@ -69,10 +85,6 @@ function validateBackupConfig(backup: BackupConfig): string | null {
       return 'notifyEmail のメールアドレス形式が無効です';
     }
   }
-  // localPath のパストラバーサル検証
-  if (backup.localPath !== undefined && PATH_TRAVERSAL_REGEX.test(backup.localPath)) {
-    return 'localPath に無効なパスが含まれています';
-  }
 
   // enabled=true の場合の必須チェック
   if (backup.enabled === true) {
@@ -95,7 +107,11 @@ function validateBackupConfig(backup: BackupConfig): string | null {
     if (backup.destinationType === 'local') {
       if (!backup.localPath) return 'local バックアップには localPath が必要です';
     }
+    if (backup.destinationType === 'gdrive') {
+      if (!backup.gdriveFolderId) return 'gdrive バックアップには gdriveFolderId が必要です';
+    }
   }
+
   return null;
 }
 

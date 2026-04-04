@@ -39,6 +39,8 @@ export default function SettingsPage() {
   const [backupS3Bucket, setBackupS3Bucket] = useState('');
   const [backupS3Region, setBackupS3Region] = useState('');
   const [backupGcsBucket, setBackupGcsBucket] = useState('');
+  const [backupGdriveFolderUrl, setBackupGdriveFolderUrl] = useState('');
+  const [backupGdriveFolderId, setBackupGdriveFolderId] = useState('');
   const [backupCompression, setBackupCompression] = useState('gzip');
   const [backupEncryption, setBackupEncryption] = useState(true);
   const [backupIncludeActivityLog, setBackupIncludeActivityLog] = useState(false);
@@ -120,6 +122,10 @@ export default function SettingsPage() {
         if (typeof b.s3Bucket === 'string') setBackupS3Bucket(b.s3Bucket);
         if (typeof b.s3Region === 'string') setBackupS3Region(b.s3Region);
         if (typeof b.gcsBucket === 'string') setBackupGcsBucket(b.gcsBucket);
+        if (typeof b.gdriveFolderId === 'string') {
+          setBackupGdriveFolderId(b.gdriveFolderId);
+          setBackupGdriveFolderUrl(`https://drive.google.com/drive/folders/${b.gdriveFolderId}`);
+        }
         if (typeof b.compression === 'string') setBackupCompression(b.compression);
         if (typeof b.encryption === 'boolean') setBackupEncryption(b.encryption);
         if (typeof b.includeActivityLog === 'boolean') setBackupIncludeActivityLog(b.includeActivityLog);
@@ -205,6 +211,7 @@ export default function SettingsPage() {
           backupPayload.s3Region = backupS3Region;
         }
         if (backupDestinationType === 'gcs') backupPayload.gcsBucket = backupGcsBucket;
+        if (backupDestinationType === 'gdrive') backupPayload.gdriveFolderId = backupGdriveFolderId;
       }
       await api.patch('/settings', { backup: backupPayload });
       showMessage('success', t('settings.saved'));
@@ -428,8 +435,42 @@ export default function SettingsPage() {
                 <option value="local">{t('settings.backupDestinationLocal')}</option>
                 <option value="s3">{t('settings.backupDestinationS3')}</option>
                 <option value="gcs">{t('settings.backupDestinationGcs')}</option>
+                <option value="gdrive">{t('settings.backupDestinationGdrive')}</option>
               </select>
             </div>
+
+            {/* Google Drive 設定 */}
+            {backupDestinationType === 'gdrive' && (
+              <div className="space-y-3 p-4 bg-slate-900 rounded-lg border border-slate-700">
+                <p className="text-sm text-slate-400">{t('settings.backupGdriveDescription')}</p>
+                <div>
+                  <label className="block text-sm font-medium mb-1">{t('settings.backupGdriveFolderUrl')}</label>
+                  <input
+                    type="url"
+                    value={backupGdriveFolderUrl}
+                    onChange={(e) => {
+                      const url = e.target.value;
+                      setBackupGdriveFolderUrl(url);
+                      // URL からフォルダ ID を自動抽出
+                      const match = url.match(/\/folders\/([a-zA-Z0-9_-]+)/);
+                      setBackupGdriveFolderId(match?.[1] ?? '');
+                    }}
+                    placeholder="https://drive.google.com/drive/folders/..."
+                    className="w-full bg-slate-700 border border-slate-600 rounded px-3 py-2 text-white font-mono text-sm"
+                  />
+                </div>
+                {backupGdriveFolderId && (
+                  <p className="text-xs text-slate-400">
+                    {t('settings.backupGdriveFolderIdDetected')}
+                    <span className="font-mono text-sky-400 ml-1">{backupGdriveFolderId}</span>
+                  </p>
+                )}
+                {backupGdriveFolderUrl && !backupGdriveFolderId && (
+                  <p className="text-xs text-red-400">{t('settings.backupGdriveFolderIdInvalid')}</p>
+                )}
+                <p className="text-xs text-slate-500">{t('settings.backupGdriveAuthNote')}</p>
+              </div>
+            )}
 
             {/* ローカルパス */}
             {backupDestinationType === 'local' && (

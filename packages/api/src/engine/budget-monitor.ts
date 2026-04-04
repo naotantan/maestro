@@ -25,7 +25,7 @@ async function checkBudgets(): Promise<void> {
       const costResult = await db
         .select({ total: sql<string>`COALESCE(SUM(ce.cost_usd), 0)` })
         .from(cost_events)
-        .leftJoin(agents, eq(cost_events.agent_id, agents.id))
+        .innerJoin(agents, eq(cost_events.agent_id, agents.id))
         .where(
           sql`${agents.company_id} = ${policy.company_id} AND ${cost_events.created_at} >= ${periodStart}`
         );

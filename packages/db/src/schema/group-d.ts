@@ -1,5 +1,5 @@
 import {
-  pgTable, text, varchar, timestamp, uuid, index, integer, primaryKey
+  pgTable, text, varchar, timestamp, uuid, index, integer, primaryKey, unique
 } from 'drizzle-orm/pg-core';
 import { companies } from './group-a';
 
@@ -16,6 +16,8 @@ export const goals = pgTable('goals', {
   updated_at: timestamp('updated_at').defaultNow(),
 }, (table) => ({
   idxCompany: index('idx_goals_company').on(table.company_id),
+  // 同一組織内で目標名が重複しないよう保証
+  uqName: unique('uq_goals_company_name').on(table.company_id, table.name),
 }));
 
 // D2: projects
@@ -29,6 +31,8 @@ export const projects = pgTable('projects', {
   updated_at: timestamp('updated_at').defaultNow(),
 }, (table) => ({
   idxCompany: index('idx_projects_company').on(table.company_id),
+  // 同一組織内でプロジェクト名が重複しないよう保証
+  uqName: unique('uq_projects_company_name').on(table.company_id, table.name),
 }));
 
 // D3: project_goals

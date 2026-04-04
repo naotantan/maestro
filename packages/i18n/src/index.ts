@@ -2,11 +2,12 @@ import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import ja from './locales/ja.json';
 import en from './locales/en.json';
+import zh from './locales/zh.json';
 import approvalsJa from './locales/features/approvals-ja.json';
 import approvalsEn from './locales/features/approvals-en.json';
 
 export const defaultLanguage = 'ja' as const;
-export const supportedLanguages = ['ja', 'en'] as const;
+export const supportedLanguages = ['ja', 'en', 'zh'] as const;
 export type SupportedLanguage = typeof supportedLanguages[number];
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
@@ -46,6 +47,7 @@ i18n
     resources: {
       ja: { translation: mergeTranslations(ja, approvalsJa) },
       en: { translation: mergeTranslations(en, approvalsEn) },
+      zh: { translation: zh },
     },
     lng: getInitialLanguage(),
     fallbackLng: defaultLanguage,

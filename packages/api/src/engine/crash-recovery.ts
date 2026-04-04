@@ -5,8 +5,8 @@
  * - 再起動回数を追跡して無限ループを防止する
  */
 
-import { getDb, agents, agent_runtime_state, heartbeat_run_events } from '@maestro/db';
-import { eq, and } from 'drizzle-orm';
+import { getDb, agents, agent_runtime_state, heartbeat_runs, heartbeat_run_events } from '@maestro/db';
+import { eq, and, count } from 'drizzle-orm';
 
 // クラッシュ回復チェック間隔（デフォルト60秒）
 const RECOVERY_INTERVAL_MS = parseInt(process.env.RECOVERY_INTERVAL_MS || '60000', 10);
@@ -17,7 +17,6 @@ let recoveryTimer: ReturnType<typeof setInterval> | null = null;
 
 interface RuntimeState {
   status: string;
-  restart_count?: number;
   last_run_id?: string;
 }
 
@@ -37,7 +36,16 @@ async function recoverCrashedAgents(): Promise<void> {
       const state = runtimeState.state as RuntimeState;
       if (state?.status !== 'crashed') continue;
 
-      const restartCount = state.restart_count ?? 0;
+      // restart_count は state JSON ではなく heartbeat_runs テーブルから取得する。
+      // heartbeat-engine.ts が state を上書きするため、state に持たせても消えてしまう。
+      const failedResult = await db
+        .select({ cnt: count() })
+        .from(heartbeat_runs)
+        .where(and(
+          eq(heartbeat_runs.agent_id, runtimeState.agent_id),
+          eq(heartbeat_runs.status, 'failed'),
+        ));
+      const restartCount = failedResult[0]?.cnt ?? 0;
 
       if (restartCount >= MAX_RESTART_COUNT) {
         // 再起動上限に達した場合はエージェントを無効化
@@ -61,30 +69,23 @@ async function recoverCrashedAgents(): Promise<void> {
 
       if (!agentRows.length) continue;
 
-      // 再起動カウントを更新して回復中状態に設定
-      const newRestartCount = restartCount + 1;
-      await db.update(agent_runtime_state).set({
-        state: { status: 'recovering', restart_count: newRestartCount },
-        last_error: runtimeState.last_error,
-        updated_at: new Date(),
-      }).where(eq(agent_runtime_state.agent_id, runtimeState.agent_id));
+      const nextAttempt = restartCount + 1;
+      console.log(`[CrashRecovery] エージェント ${runtimeState.agent_id} を回復中 (試行: ${nextAttempt}/${MAX_RESTART_COUNT})`);
 
-      console.log(`[CrashRecovery] エージェント ${runtimeState.agent_id} を回復中 (試行: ${newRestartCount}/${MAX_RESTART_COUNT})`);
-
-      // heartbeat_run_eventsに回復ログを記録
-      // 最後の実行IDがある場合のみ記録
+      // heartbeat_run_eventsに回復ログを記録（最後の実行IDがある場合のみ）
       if (state.last_run_id) {
         await db.insert(heartbeat_run_events).values({
           heartbeat_run_id: state.last_run_id,
           event_type: 'recovery',
-          log: `クラッシュ回復を試行 (${newRestartCount}回目)`,
-          metadata: { restart_count: newRestartCount, previous_error: runtimeState.last_error },
+          log: `クラッシュ回復を試行 (${nextAttempt}回目)`,
+          metadata: { attempt: nextAttempt, previous_error: runtimeState.last_error },
         }).catch(() => { /* 古いrun_idは存在しないことがある */ });
       }
 
       // idle状態に戻してheartbeatエンジンに次の実行を任せる
+      // recovering の中間状態は設けない（heartbeat-engine と競合するため）
       await db.update(agent_runtime_state).set({
-        state: { status: 'idle', restart_count: newRestartCount },
+        state: { status: 'idle' },
         updated_at: new Date(),
       }).where(eq(agent_runtime_state.agent_id, runtimeState.agent_id));
     }

@@ -3,24 +3,44 @@ import chalk from 'chalk';
 import ora from 'ora';
 import { exec } from 'child_process';
 import { promisify } from 'util';
-import { existsSync, mkdirSync, readdirSync, statSync } from 'fs';
+import { existsSync, mkdirSync, readdirSync, statSync, unlinkSync } from 'fs';
 import { homedir } from 'os';
 import { join } from 'path';
+import { uploadToDrive } from '../lib/gdrive.js';
 
 const execAsync = promisify(exec);
 
 const BACKUP_DIR = join(homedir(), '.maestro', 'backups');
+
+// バックアップ保存先の種類
+type DestType = 'local' | 'gdrive';
 
 export const backupCommand = new Command('backup')
   .description('バックアップ管理')
   .addCommand(
     new Command('create')
       .description('バックアップを作成')
-      .option('--output <path>', 'バックアップ出力先')
-      .action(async (options: { output?: string }) => {
-        const outputDir = options.output || BACKUP_DIR;
+      .option('--output <path>', 'バックアップ出力先（ローカルのみ）')
+      .option('--dest <type>', '保存先タイプ: local（デフォルト）または gdrive', 'local')
+      .option('--folder-id <id>', 'Google Drive フォルダID（--dest gdrive 時に必須）')
+      .action(async (options: { output?: string; dest: DestType; folderId?: string }) => {
+        const dest = options.dest;
 
-        // ディレクトリ作成
+        // --dest gdrive 時のバリデーション
+        if (dest === 'gdrive' && !options.folderId) {
+          console.error(chalk.red('エラー: --dest gdrive には --folder-id <フォルダID> が必要です'));
+          console.error(chalk.yellow('Google Drive のフォルダ URL から ID を確認してください'));
+          console.error(chalk.gray('例: https://drive.google.com/drive/folders/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs'));
+          process.exit(1);
+        }
+
+        if (dest !== 'local' && dest !== 'gdrive') {
+          console.error(chalk.red(`エラー: --dest には local または gdrive を指定してください`));
+          process.exit(1);
+        }
+
+        // ローカルに一時保存してから転送する（gdrive でも一時的にローカルに生成）
+        const outputDir = options.output || BACKUP_DIR;
         if (!existsSync(outputDir)) {
           mkdirSync(outputDir, { recursive: true });
         }
@@ -32,14 +52,35 @@ export const backupCommand = new Command('backup')
 
         try {
           // Docker を使用して pg_dump を実行
-          // 実装例（実際の接続情報は環境に応じて調整が必要）
           await execAsync(
             `docker exec maestro-postgres pg_dump -U maestro maestro > "${backupFile}"`,
           );
+          spinner.succeed('SQLダンプ作成完了');
 
-          spinner.succeed('バックアップ作成完了');
-          console.log(chalk.green('\n✅ バックアップを作成しました'));
-          console.log(`ファイル: ${chalk.gray(backupFile)}\n`);
+          if (dest === 'gdrive') {
+            // Google Drive へアップロード
+            const uploadSpinner = ora('Google Drive にアップロード中...').start();
+            try {
+              const driveUrl = await uploadToDrive(backupFile, options.folderId!);
+              uploadSpinner.succeed('Google Drive へのアップロード完了');
+              console.log(chalk.green('\n✅ バックアップを Google Drive に保存しました'));
+              console.log(`Drive URL: ${chalk.cyan(driveUrl)}`);
+              // ローカルの一時ファイルを削除
+              unlinkSync(backupFile);
+              console.log(chalk.gray(`（ローカル一時ファイルを削除しました: ${backupFile}）\n`));
+            } catch (uploadError) {
+              uploadSpinner.fail('Google Drive へのアップロード失敗');
+              if (uploadError instanceof Error) {
+                console.error(chalk.red(`エラー: ${uploadError.message}`));
+              }
+              console.log(chalk.yellow(`\nローカルには保存されています: ${backupFile}`));
+              process.exit(1);
+            }
+          } else {
+            // ローカル保存
+            console.log(chalk.green('\n✅ バックアップを作成しました'));
+            console.log(`ファイル: ${chalk.gray(backupFile)}\n`);
+          }
         } catch (error) {
           spinner.fail('バックアップ作成失敗');
           if (error instanceof Error) {
