@@ -1,5 +1,6 @@
-import { useParams } from 'react-router-dom';
-import { useQuery } from 'react-query';
+import { useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { useMutation, useQuery, useQueryClient } from 'react-query';
 import { type AgentType } from '@maestro/shared';
 import { useTranslation } from '@maestro/i18n';
 import api from '../../lib/api.ts';
@@ -57,6 +58,9 @@ function heartbeatBadge(
 export default function AgentDetailPage() {
   const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const [deleteConfirm, setDeleteConfirm] = useState(false);
 
   const { data: agent, isLoading, error } = useQuery<AgentDetail>(
     ['agent', id],
@@ -72,6 +76,26 @@ export default function AgentDetailPage() {
     ['agent-runs', id],
     () => api.get(`/agents/${id}/runs`).then((r) => r.data.data),
     { enabled: !!id },
+  );
+
+  const toggleEnabled = useMutation(
+    (enabled: boolean) => api.patch(`/agents/${id}`, { enabled }).then((r) => r.data.data),
+    {
+      onSuccess: () => {
+        queryClient.invalidateQueries(['agent', id]);
+        queryClient.invalidateQueries('agents');
+      },
+    },
+  );
+
+  const deleteAgent = useMutation(
+    () => api.delete(`/agents/${id}`).then((r) => r.data),
+    {
+      onSuccess: () => {
+        queryClient.invalidateQueries('agents');
+        navigate('/agents');
+      },
+    },
   );
 
   if (isLoading) return <div className="p-6"><LoadingSpinner text={t('agents.detailLoading')} /></div>;
@@ -98,7 +122,55 @@ export default function AgentDetailPage() {
           </div>
           {agent.description && <p className="max-w-3xl text-slate-300">{agent.description}</p>}
         </div>
+
+        {/* アクションボタン */}
+        <div className="flex flex-wrap gap-2 md:flex-nowrap">
+          <button
+            onClick={() => toggleEnabled.mutate(!agent.enabled)}
+            disabled={toggleEnabled.isLoading}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 ${
+              agent.enabled
+                ? 'bg-slate-700 hover:bg-slate-600 text-slate-200'
+                : 'bg-sky-600 hover:bg-sky-500 text-white'
+            }`}
+          >
+            {toggleEnabled.isLoading
+              ? '...'
+              : agent.enabled
+              ? t('agents.disable')
+              : t('agents.enable')}
+          </button>
+
+          {!deleteConfirm ? (
+            <button
+              onClick={() => setDeleteConfirm(true)}
+              className="px-4 py-2 rounded-lg text-sm font-medium bg-slate-700 hover:bg-red-900 text-slate-200 hover:text-red-200 transition-colors"
+            >
+              {t('agents.delete')}
+            </button>
+          ) : (
+            <div className="flex gap-2">
+              <button
+                onClick={() => deleteAgent.mutate()}
+                disabled={deleteAgent.isLoading}
+                className="px-4 py-2 rounded-lg text-sm font-medium bg-red-700 hover:bg-red-600 text-white transition-colors disabled:opacity-50"
+              >
+                {deleteAgent.isLoading ? '...' : t('agents.confirmDelete')}
+              </button>
+              <button
+                onClick={() => setDeleteConfirm(false)}
+                className="px-4 py-2 rounded-lg text-sm font-medium bg-slate-700 hover:bg-slate-600 text-slate-200 transition-colors"
+              >
+                {t('common.cancel')}
+              </button>
+            </div>
+          )}
+        </div>
       </div>
+
+      {(toggleEnabled.isError || deleteAgent.isError) && (
+        <Alert variant="danger" message={t('common.error')} />
+      )}
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         <Card className="xl:col-span-2">

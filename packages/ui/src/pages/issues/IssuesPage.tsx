@@ -14,6 +14,8 @@ interface Issue {
   status: string;
   priority: number;
   assigned_to?: string | null;
+  project_id?: string | null;
+  project_name?: string | null;
   created_at: string;
 }
 
@@ -231,6 +233,10 @@ export default function IssuesPage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0">
+                    {/* プロジェクトバッジ */}
+                    <Badge variant="info">
+                      {issue.project_name ?? '全体'}
+                    </Badge>
                     <Badge variant={priorityBadgeVariant(issue.priority)}>
                       {t('issues.priorityValue', { priority: priorityLabel(issue.priority, t) })}
                     </Badge>

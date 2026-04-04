@@ -1,4 +1,4 @@
-# maestro — The platform for running AI agents properly
+# maestro — The platform for running AI skills properly
 
 [日本語](./README.md) | **English** | [中文](./README.zh.md)
 
@@ -8,7 +8,7 @@
 
 maestro is an open-source backend that solves exactly these problems.
 
-What it does is simple: it automates the **start, monitor, stop, and cost management** of AI agents. Think of it as an **operations management tool for AI agents**.
+What it does is simple: it automates the **start, monitor, stop, and cost management** of AI skills. Think of it as an **operations management tool for AI skills**.
 
 ---
 
@@ -17,9 +17,9 @@ What it does is simple: it automates the **start, monitor, stop, and cost manage
 | Common pain point | What maestro does |
 |---|---|
 | AI crashes go unnoticed | Health check every 30 seconds; auto-restart on failure (up to 3 times) |
-| API bills balloon unexpectedly | Set a monthly budget cap; agents auto-stop the moment it's exceeded |
+| API bills balloon unexpectedly | Set a monthly budget cap; skills auto-stop the moment it's exceeded |
 | No visibility into who ran what | All operations are logged with timestamps (audit-ready) |
-| Task assignment is manual | Register a task and it's automatically assigned to an available agent |
+| Task assignment is manual | Register a task and it's automatically assigned to an available skill |
 | Can't fully delegate critical actions to AI | Set a "human approval required" gate for sensitive operations |
 | Want to integrate with Slack or GitHub | Configure with Webhooks — no code needed |
 
@@ -78,34 +78,34 @@ The heart of maestro lives in `packages/api/src/engine/`.
 
 ### 1. Heartbeat Engine (heartbeat-engine.ts)
 
-**What it does:** Every 30 seconds, asks every enabled agent "are you alive?"
+**What it does:** Every 30 seconds, asks every enabled skill "are you alive?"
 
 **Flow:**
 
-1. Fetch all agents with `enabled: true` from the database
+1. Fetch all skills with `enabled: true` from the database
 2. Run health checks via adapters (up to 3 in parallel)
 3. If responsive → update `last_heartbeat_at`
 4. If unresponsive → set `agent_runtime_state` to `crashed` (picked up by the crash recovery engine)
-5. Also processes any pending agent-to-agent handoffs
+5. Also processes any pending skill-to-skill handoffs
 
-### Note: Agent handoffs and chains
+### Note: Skill handoffs and chains
 
-The heartbeat engine also handles passing work to the next agent when a task completes.
+The heartbeat engine also handles passing work to the next skill when a task completes.
 
-- **1-to-1 handoff**: Agent A finishes → passes output to Agent B to continue
-- **Chain (A→B→C)**: Connect multiple agents in sequence to run as a pipeline
+- **1-to-1 handoff**: Skill A finishes → passes output to Skill B to continue
+- **Chain (A→B→C)**: Connect multiple skills in sequence to run as a pipeline
 
 See `docs/handoff/` and `docs/chain/` for design specs.
 
 ### 2. Crash Recovery Engine (crash-recovery.ts)
 
-**What it does:** Every 60 seconds, finds crashed agents and automatically recovers them.
+**What it does:** Every 60 seconds, finds crashed skills and automatically recovers them.
 
 **Flow:**
 
 1. Find entries with `status: crashed` in `agent_runtime_state`
 2. If restart count < 3 → reset status to `idle` (re-executed on next heartbeat)
-3. If restart count reaches 3 → disable and stop the agent (prevents infinite loops)
+3. If restart count reaches 3 → disable and stop the skill (prevents infinite loops)
 
 ### 3. Budget Monitor (budget-monitor.ts)
 
@@ -115,7 +115,7 @@ See `docs/handoff/` and `docs/chain/` for design specs.
 
 1. Fetch all budget policies
 2. Aggregate cumulative costs for the current month
-3. If limit exceeded → auto-stop all agents for that company
+3. If limit exceeded → auto-stop all skills for that company
 4. Record the incident in `budget_incidents`
 
 ---
@@ -131,7 +131,7 @@ See `docs/handoff/` and `docs/chain/` for design specs.
 | `register` | Register a new user |
 | `org` | Manage your organization (tenant) |
 | `project` | Create and list projects |
-| `agent` | Add, list, enable, and disable agents |
+| `agent` | Add, list, enable, and disable skills |
 | `goal` | Set goals and track progress |
 | `issue` | Create and manage issues |
 | `routine` | Schedule recurring tasks |
@@ -157,7 +157,7 @@ The REST API covers 16 resources (Bearer token authentication).
 | `/auth` | Login & token issuance |
 | `/org` | Organization management |
 | `/companies` | Tenant management |
-| `/agents` | Agent CRUD |
+| `/agents` | Skill CRUD |
 | `/tasks` | Task creation & assignment |
 | `/issues` | Issue management |
 | `/goals` | Goal management |
@@ -168,7 +168,7 @@ The REST API covers 16 resources (Bearer token authentication).
 | `/activity` | Operation log |
 | `/plugins` | Plugin management |
 | `/settings` | Tenant settings |
-| `/handoffs` | Agent-to-agent handoffs |
+| `/handoffs` | Skill-to-agent handoffs |
 
 ---
 
@@ -299,4 +299,4 @@ Package build order: `shared → db → i18n → adapters → api → cli → ui
 
 ## Summary
 
-maestro is an open-source platform for safely running AI agents like Claude, Gemini, and Codex in production. Built around three core engines — 30-second health checks, automatic crash recovery (up to 3 retries), and auto-stop on monthly budget overrun — it also provides automatic task assignment, human approval gates, agent-to-agent handoff chains, Webhook integration, and full audit logging. Its multi-tenant design supports sharing across multiple companies and teams. Operate via REST API, CLI (17 commands), or Web dashboard.
+maestro is an open-source platform for safely running AI skills like Claude, Gemini, and Codex in production. Built around three core engines — 30-second health checks, automatic crash recovery (up to 3 retries), and auto-stop on monthly budget overrun — it also provides automatic task assignment, human approval gates, agent-to-agent handoff chains, Webhook integration, and full audit logging. Its multi-tenant design supports sharing across multiple companies and teams. Operate via REST API, CLI (17 commands), or Web dashboard.

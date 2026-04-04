@@ -5,8 +5,8 @@
  * - クラッシュ時はcrash-recoveryモジュールと連携して自動回復する
  */
 
-import { getDb, agents, heartbeat_runs, heartbeat_run_events, agent_runtime_state, agent_handoffs, agent_task_sessions } from '@maestro/db';
-import { eq, and, desc } from 'drizzle-orm';
+import { getDb, agents, heartbeat_runs, heartbeat_run_events, agent_runtime_state, agent_handoffs, agent_task_sessions, issues } from '@maestro/db';
+import { eq, and, desc, inArray } from 'drizzle-orm';
 import type { AgentType } from '@maestro/shared';
 
 // @maestro/adapters は ESM のため CJS コンテキストから static import できない。
@@ -87,6 +87,10 @@ async function runAgentHeartbeat(
       updated_at: new Date(),
     }).where(eq(agent_runtime_state.agent_id, agentId));
 
+    // エージェントが応答した（復帰した）タイミングで、
+    // 停止中に積み上がった pending handoff を即座に処理する
+    await processHandoffs(agentId);
+
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : String(err);
 
@@ -150,19 +154,45 @@ async function runAllHeartbeats(): Promise<void> {
 }
 
 /**
- * pending 状態の引き継ぎを自動実行する（既存のハートビート処理とは独立）
- * runAllHeartbeats() の末尾から呼ばれる
+ * pending 状態の引き継ぎを自動実行する
+ *
+ * @param targetAgentId - 指定した場合そのエージェント宛の handoff のみ処理する
+ *                        （エージェント復帰時の積み残し処理に使用）
+ *
+ * 停止中エージェント宛の handoff は処理しない（failed にしない）。
+ * enabled=true かつハートビートが生きているエージェント宛のみ処理対象とする。
  */
-async function processHandoffs(): Promise<void> {
+async function processHandoffs(targetAgentId?: string): Promise<void> {
   try {
     const db = getDb();
 
-    // pending の引き継ぎを最大2件取得（並列処理の上限）
+    // enabled なエージェントの ID 一覧を取得（停止中は処理しない）
+    const enabledAgentRows = await db
+      .select({ id: agents.id })
+      .from(agents)
+      .where(eq(agents.enabled, true));
+
+    if (enabledAgentRows.length === 0) return;
+    const enabledIds = enabledAgentRows.map(r => r.id);
+
+    // pending の引き継ぎを取得
+    // - enabled エージェント宛のみ（停止中宛は failed にしない）
+    // - targetAgentId 指定時はそのエージェントの積み残しを最大 10 件処理
+    // - 通常スキャンは最大 2 件（並列処理の上限）
+    const baseConditions = [
+      eq(agent_handoffs.status, 'pending'),
+      inArray(agent_handoffs.to_agent_id, enabledIds),
+    ] as const;
+
     const pending = await db
       .select()
       .from(agent_handoffs)
-      .where(eq(agent_handoffs.status, 'pending'))
-      .limit(2);
+      .where(
+        targetAgentId
+          ? and(...baseConditions, eq(agent_handoffs.to_agent_id, targetAgentId))
+          : and(...baseConditions)
+      )
+      .limit(targetAgentId ? 10 : 2); // 復帰時スイープは多め
 
     if (pending.length === 0) return;
 
@@ -214,6 +244,31 @@ async function processHandoffs(): Promise<void> {
             completed_at: new Date(),
           })
           .where(eq(agent_handoffs.id, handoff.id));
+
+        // issue_id が指定されており完了した場合、issue ステータスを自動更新
+        if (finalStatus === 'completed' && handoff.issue_id) {
+          const issueRows = await db.select({ description: issues.description })
+            .from(issues)
+            .where(and(
+              eq(issues.id, handoff.issue_id),
+              eq(issues.company_id, handoff.company_id) // 自社Issueのみ更新（他テナント保護）
+            ))
+            .limit(1);
+          const prevDesc = issueRows[0]?.description ?? '';
+          const resolvedAt = new Date().toISOString().slice(0, 16).replace('T', ' ');
+          const resultSnippet = String(finalResult ?? '').slice(0, 200);
+          const resolutionNote = `\n\n---\n**対応完了** (${resolvedAt})\nエージェントハンドオフにより自動処理。\n結果: ${resultSnippet}`;
+          const newDesc = prevDesc.includes('**対応完了**')
+            ? prevDesc
+            : (prevDesc + resolutionNote).trim();
+          await db.update(issues)
+            .set({ status: 'done', description: newDesc, updated_at: new Date() })
+            .where(and(
+              eq(issues.id, handoff.issue_id),
+              eq(issues.company_id, handoff.company_id) // 自社Issueのみ更新
+            ));
+          console.log(`[HeartbeatEngine] Issue ${handoff.issue_id} を done に自動更新（対応内容追記済み）`);
+        }
 
         // チェーン: completed かつ next_agent_id がある場合は次 handoff を自動生成
         if (finalStatus === 'completed' && handoff.next_agent_id) {

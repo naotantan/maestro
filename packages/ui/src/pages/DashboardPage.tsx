@@ -52,8 +52,63 @@ interface ActivityLog {
   actor_id: string;
   entity_type: string;
   entity_id: string;
+  entity_name: string | null;
+  updated_fields?: string[] | null;
   action: string;
   created_at: string;
+}
+
+const ACTION_LABEL: Record<string, string> = { create: '作成', update: '更新', delete: '削除' };
+const ENTITY_LABEL: Record<string, string> = {
+  issue: '課題', goal: 'ゴール', project: 'プロジェクト',
+  agent: 'エージェント', routine: 'ルーティン', plugin: 'プラグイン',
+};
+
+// AgentType → 表示名
+const AGENT_TYPE_LABEL: Record<string, string> = {
+  claude_local:      'Claude Code',
+  claude_api:        'Claude API',
+  codex_local:       'Codex',
+  cursor:            'Cursor',
+  gemini_local:      'Gemini',
+  openclaw_gateway:  'OpenClaw',
+  opencode_local:    'OpenCode',
+  pi_local:          'Pi',
+};
+
+// APIベースかどうか
+const IS_API_TYPE = new Set(['claude_api', 'openclaw_gateway']);
+
+/** 稼働中スキルをtype別にグループ化して表示 */
+function ActiveSkillsByType({ agents }: { agents: Agent[] }) {
+  // type ごとに集計
+  const groups: Record<string, { count: number; isApi: boolean }> = {};
+  for (const a of agents) {
+    const typeKey = a.type ?? 'unknown';
+    if (!groups[typeKey]) {
+      groups[typeKey] = { count: 0, isApi: IS_API_TYPE.has(typeKey) };
+    }
+    groups[typeKey].count++;
+  }
+  const entries = Object.entries(groups).sort((a, b) => b[1].count - a[1].count);
+
+  return (
+    <div className="space-y-2">
+      {entries.map(([typeKey, { count, isApi }]) => (
+        <div key={typeKey} className="flex items-center gap-2">
+          <span className="text-xs text-slate-200 flex-1 truncate">
+            {AGENT_TYPE_LABEL[typeKey] ?? typeKey}
+          </span>
+          <span className={`text-xs px-1.5 py-0.5 rounded flex-shrink-0 whitespace-nowrap ${
+            isApi ? 'bg-violet-900 text-violet-300' : 'bg-sky-950 text-sky-400'
+          }`}>
+            {isApi ? 'API' : 'サブスク'}
+          </span>
+          <span className="text-xs font-bold text-sky-400 w-4 text-right flex-shrink-0">{count}</span>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 function StatCard({
@@ -208,13 +263,18 @@ export default function DashboardPage() {
 
       {/* 統計カード */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
-          label={t('dashboard.activeAgents')}
-          value={agentCount}
-          icon={<Bot className="h-5 w-5" />}
-          detail={t('dashboard.activeAgentsDetail')}
-          color="sky"
-        />
+        {/* 稼働中スキル: 部署別グループ表示 */}
+        <div className="bg-slate-800 rounded-xl p-4 border border-slate-700 flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-slate-400">稼働中のスキル</span>
+            <span className="bg-slate-700 rounded-full p-1.5 text-slate-400"><Bot className="h-4 w-4" /></span>
+          </div>
+          {agentCount === 0 ? (
+            <p className="text-xs text-slate-500">稼働中のスキルなし</p>
+          ) : (
+            <ActiveSkillsByType agents={(agents ?? []).filter(a => a.enabled)} />
+          )}
+        </div>
         <StatCard
           label={t('dashboard.incompleteIssues')}
           value={openIssues}
@@ -260,10 +320,25 @@ export default function DashboardPage() {
                   key={activity.id}
                   className="flex flex-col gap-2 rounded-lg p-3 transition-colors hover:bg-slate-700/30 md:flex-row md:items-center md:justify-between"
                 >
-                  <p className="text-slate-300 text-sm">
-                    {activity.entity_type}: {activity.action}
-                  </p>
-                  <span className="text-xs text-slate-500">{formatDate(activity.created_at)}</span>
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    <span className="flex-shrink-0 inline-block min-w-[3rem] text-center px-2 py-0.5 rounded text-xs font-medium whitespace-nowrap bg-slate-700 text-slate-300">
+                      {ACTION_LABEL[activity.action] ?? activity.action}
+                    </span>
+                    <span className="text-xs text-slate-500 flex-shrink-0">
+                      {ENTITY_LABEL[activity.entity_type] ?? activity.entity_type}
+                    </span>
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-sm text-slate-200 truncate">
+                        {activity.entity_name ?? activity.entity_id ?? '—'}
+                      </span>
+                      {activity.updated_fields && activity.updated_fields.length > 0 && (
+                        <span className="text-xs text-slate-500 truncate">
+                          {activity.updated_fields.join(', ')} を変更
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <span className="text-xs text-slate-500 flex-shrink-0">{formatDate(activity.created_at)}</span>
                 </div>
               ))}
             </div>

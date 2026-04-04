@@ -3,19 +3,23 @@ import {
 } from 'drizzle-orm/pg-core';
 import { companies } from './group-a';
 
-// D1: goals
+// D1: goals（projectsより先に定義するため project_id は後述の projects を参照）
 export const goals = pgTable('goals', {
   id: uuid('id').primaryKey().defaultRandom(),
   company_id: uuid('company_id').notNull().references(() => companies.id, { onDelete: 'cascade' }),
+  // どのプロジェクトに属するか（nullable = 組織横断のゴール）
+  project_id: uuid('project_id'),
   name: varchar('name', { length: 255 }).notNull(),
   description: text('description'),
   deadline: timestamp('deadline'),
   status: varchar('status', { length: 20 }).default('in_progress'),
+  priority: integer('priority').default(1), // 0=no priority, 1=low, 2=medium, 3=high, 4=urgent
   progress: integer('progress').default(0), // 達成率 0-100
   created_at: timestamp('created_at').defaultNow(),
   updated_at: timestamp('updated_at').defaultNow(),
 }, (table) => ({
   idxCompany: index('idx_goals_company').on(table.company_id),
+  idxProject: index('idx_goals_project').on(table.project_id),
   // 同一組織内で目標名が重複しないよう保証
   uqName: unique('uq_goals_company_name').on(table.company_id, table.name),
 }));

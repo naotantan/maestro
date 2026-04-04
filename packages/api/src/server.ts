@@ -19,6 +19,10 @@ import { pluginsRouter } from './routes/plugins';
 import { settingsRouter } from './routes/settings';
 import { handoffsRouter } from './routes/handoffs';
 import { tasksRouter } from './routes/tasks';
+import { instructionsRouter } from './routes/instructions';
+import { sessionSummariesRouter } from './routes/session-summaries';
+import { sessionContextRouter } from './routes/session-context';
+import { noteArticlesRouter } from './routes/note-articles';
 import { errorHandler } from './middleware/error-handler';
 import { authMiddleware } from './middleware/auth';
 import { activityLogger } from './middleware/activity-logger';
@@ -123,6 +127,10 @@ export function createApp(): Express {
   app.use('/api/settings', settingsRouter);
   app.use('/api/handoffs', handoffsRouter);
   app.use('/api/tasks', tasksRouter);
+  app.use('/api/instructions', instructionsRouter);
+  app.use('/api/session-summaries', sessionSummariesRouter);
+  app.use('/api/session-context', sessionContextRouter);
+  app.use('/api/note-articles', noteArticlesRouter);
 
   // 404ハンドラ（未定義ルートへのリクエストをJSON形式で返す）
   app.use((_req, res) => {

@@ -161,3 +161,28 @@ export const principal_permission_grants = pgTable('principal_permission_grants'
 }, (table) => ({
   idxPrincipal: index('idx_grants_principal').on(table.principal_id),
 }));
+
+// H13: session_summaries — Claude Code セッション作業記録
+// SessionEnd フックから自動 POST される。maestro から作業履歴を参照できる。
+export const session_summaries = pgTable('session_summaries', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  company_id: uuid('company_id').notNull().references(() => companies.id, { onDelete: 'cascade' }),
+  // セッション識別（Claude Code の sessionId など）
+  session_id: varchar('session_id', { length: 255 }),
+  // どのエージェント（Claude Code インスタンス）が記録したか
+  agent_id: uuid('agent_id').references(() => agents.id, { onDelete: 'set null' }),
+  // 作業サマリー本文
+  summary: text('summary').notNull(),
+  // 変更・作成されたファイル一覧
+  changed_files: json('changed_files').$type<string[]>(),
+  // 関連 Issue ID 一覧
+  related_issue_ids: json('related_issue_ids').$type<string[]>(),
+  // セッション開始・終了時刻
+  session_started_at: timestamp('session_started_at'),
+  session_ended_at: timestamp('session_ended_at').defaultNow(),
+  created_at: timestamp('created_at').defaultNow(),
+}, (table) => ({
+  idxCompany: index('idx_session_summaries_company').on(table.company_id),
+  idxAgent: index('idx_session_summaries_agent').on(table.agent_id),
+  idxEnded: index('idx_session_summaries_ended').on(table.session_ended_at),
+}));

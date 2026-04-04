@@ -1,16 +1,31 @@
 import { Router, type Router as RouterType } from 'express';
-import { getDb, goals, issue_goals, issues } from '@maestro/db';
+import { getDb, goals, issue_goals, issues, projects } from '@maestro/db';
 import { eq, and, desc, sql, inArray } from 'drizzle-orm';
 import { sanitizeString } from '../middleware/validate';
 
 export const goalsRouter: RouterType = Router();
 
+// GET /api/goals（project_nameをJOINで付与）
 goalsRouter.get('/', async (req, res, next) => {
   try {
     const db = getDb();
     const rows = await db
-      .select()
+      .select({
+        id: goals.id,
+        company_id: goals.company_id,
+        project_id: goals.project_id,
+        project_name: projects.name,
+        name: goals.name,
+        description: goals.description,
+        deadline: goals.deadline,
+        status: goals.status,
+        priority: goals.priority,
+        progress: goals.progress,
+        created_at: goals.created_at,
+        updated_at: goals.updated_at,
+      })
       .from(goals)
+      .leftJoin(projects, eq(goals.project_id, projects.id))
       .where(eq(goals.company_id, req.companyId!))
       .orderBy(desc(goals.created_at));
     res.json({ data: rows });
@@ -21,10 +36,12 @@ goalsRouter.get('/', async (req, res, next) => {
 
 goalsRouter.post('/', async (req, res, next) => {
   try {
-    const { name, description, deadline } = req.body as {
+    const { name, description, deadline, project_id, priority } = req.body as {
       name?: string;
       description?: string;
       deadline?: string;
+      project_id?: string;
+      priority?: number;
     };
     if (!name) {
       res.status(400).json({
@@ -36,13 +53,26 @@ goalsRouter.post('/', async (req, res, next) => {
     const sanitizedName = sanitizeString(name);
     const sanitizedDescription = description ? sanitizeString(description) : description;
     const db = getDb();
+
+    // project_id の検証（指定された場合のみ）
+    if (project_id) {
+      const projectRows = await db.select({ id: projects.id }).from(projects)
+        .where(and(eq(projects.id, project_id), eq(projects.company_id, req.companyId!))).limit(1);
+      if (!projectRows.length) {
+        res.status(400).json({ error: 'validation_failed', message: 'project_id が無効です' });
+        return;
+      }
+    }
+
     const newGoal = await db
       .insert(goals)
       .values({
         company_id: req.companyId!,
+        project_id: project_id ?? null,
         name: sanitizedName,
         description: sanitizedDescription,
         deadline: deadline ? new Date(deadline) : undefined,
+        priority: priority ?? 1,
       })
       .returning();
     res.status(201).json({ data: newGoal[0] });
@@ -76,13 +106,26 @@ goalsRouter.get('/:goalId', async (req, res, next) => {
 
 goalsRouter.patch('/:goalId', async (req, res, next) => {
   try {
-    const { name, description, status, deadline } = req.body as {
+    const { name, description, status, deadline, project_id, priority } = req.body as {
       name?: string;
       description?: string;
       status?: string;
       deadline?: string;
+      project_id?: string | null;
+      priority?: number;
     };
     const db = getDb();
+
+    // project_id の検証（指定された場合のみ）
+    if (project_id) {
+      const projectRows = await db.select({ id: projects.id }).from(projects)
+        .where(and(eq(projects.id, project_id), eq(projects.company_id, req.companyId!))).limit(1);
+      if (!projectRows.length) {
+        res.status(400).json({ error: 'validation_failed', message: 'project_id が無効です' });
+        return;
+      }
+    }
+
     const updated = await db
       .update(goals)
       .set({
@@ -90,6 +133,8 @@ goalsRouter.patch('/:goalId', async (req, res, next) => {
         ...(description !== undefined && { description: description ? sanitizeString(description) : description }),
         ...(status && { status }),
         ...(deadline && { deadline: new Date(deadline) }),
+        ...(project_id !== undefined && { project_id: project_id ?? null }),
+        ...(priority !== undefined && { priority }),
         updated_at: new Date(),
       })
       .where(

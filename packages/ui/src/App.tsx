@@ -18,6 +18,7 @@ import RoutinesPage from './pages/routines/RoutinesPage.tsx';
 import ApprovalsPage from './pages/approvals/ApprovalsPage.tsx';
 import CostsPage from './pages/costs/CostsPage.tsx';
 import ActivityPage from './pages/ActivityPage.tsx';
+import SessionsPage from './pages/sessions/SessionsPage.tsx';
 import PluginsPage from './pages/plugins/PluginsPage.tsx';
 import SettingsPage from './pages/settings/SettingsPage.tsx';
 import OrgPage from './pages/org/OrgPage.tsx';
@@ -61,6 +62,7 @@ export default function App() {
           <Route path="approvals" element={<ApprovalsPage />} />
           <Route path="costs" element={<CostsPage />} />
           <Route path="activity" element={<ActivityPage />} />
+          <Route path="sessions" element={<SessionsPage />} />
           <Route path="plugins" element={<PluginsPage />} />
           <Route path="org" element={<OrgPage />} />
           <Route path="settings" element={<SettingsPage />} />

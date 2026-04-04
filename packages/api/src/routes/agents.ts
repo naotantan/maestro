@@ -212,3 +212,21 @@ function encryptApiKeyInConfig(config: Record<string, unknown>): Record<string, 
     throw new Error('APIキーの暗号化に失敗しました。ENCRYPTION_KEY 環境変数を確認してください');
   }
 }
+
+// GET /api/agents/search?q=xxx — エージェント名をファジー検索
+agentsRouter.get('/search', async (req, res, next) => {
+  try {
+    const q = (req.query.q as string ?? '').trim().toLowerCase();
+    const db = getDb();
+    const rows = await db
+      .select({ id: agents.id, name: agents.name, type: agents.type, enabled: agents.enabled })
+      .from(agents)
+      .where(eq(agents.company_id, req.companyId!));
+    const filtered = q
+      ? rows.filter(a => a.name.toLowerCase().includes(q))
+      : rows;
+    res.json({ data: filtered.slice(0, 10) });
+  } catch (err) {
+    next(err);
+  }
+});

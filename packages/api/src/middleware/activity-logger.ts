@@ -60,6 +60,19 @@ export function activityLogger(req: Request, res: Response, next: NextFunction):
     const pathMatch = req.path.match(uuidPattern);
     const entityId = pathMatch?.[0] ?? undefined;
 
+    const body = req.body as Record<string, unknown> | undefined;
+
+    // エンティティ名（issue→title, その他→name）
+    const entityName: string | undefined =
+      (typeof body?.title === 'string' ? body.title : undefined) ??
+      (typeof body?.name === 'string' ? body.name : undefined);
+
+    // 更新されたフィールド一覧（センシティブキーを除外）
+    const SKIP_KEYS = new Set(['password', 'token', 'secret', 'api_key', 'apiKey']);
+    const updatedFields = body
+      ? Object.keys(body).filter(k => !SKIP_KEYS.has(k))
+      : [];
+
     getDb()
       .insert(activity_log)
       .values({
@@ -73,6 +86,8 @@ export function activityLogger(req: Request, res: Response, next: NextFunction):
           path: req.path,
           authKeyId: req.authKeyId,
           authKeyName: req.authKeyName,
+          entity_name: entityName,
+          updated_fields: updatedFields.length > 0 ? updatedFields : undefined,
         },
       })
       .catch(() => {

@@ -8,10 +8,14 @@ import { Alert, EmptyState, LoadingSpinner, Button, Card, CardBody } from '../..
 interface Goal {
   id: string;
   company_id: string;
+  project_id: string | null;
+  project_name: string | null;
   name: string;
   description: string | null;
   deadline: string | null;
   status: string;
+  priority: number;
+  progress: number;
   created_at: string;
   updated_at: string;
 }
@@ -22,8 +26,11 @@ export default function GoalsPage() {
   const [showCreate, setShowCreate] = useState(false);
   const [newName, setNewName] = useState('');
   const [newDescription, setNewDescription] = useState('');
+  const [newPriority, setNewPriority] = useState(1);
   const [submitting, setSubmitting] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingPriority, setEditingPriority] = useState(1);
 
   const { data: goals, isLoading, error } = useQuery<Goal[]>(
     'goals',
@@ -40,8 +47,10 @@ export default function GoalsPage() {
       const payload: {
         name: string;
         description?: string;
+        priority: number;
       } = {
         name: newName.trim(),
+        priority: newPriority,
       };
 
       if (newDescription.trim()) {
@@ -51,12 +60,23 @@ export default function GoalsPage() {
       await api.post('/goals', payload);
       setNewName('');
       setNewDescription('');
+      setNewPriority(1);
       setShowCreate(false);
       await queryClient.invalidateQueries('goals');
     } catch (err: any) {
       setCreateError(err?.response?.data?.message ?? t('goals.createFailed'));
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleUpdatePriority = async (goalId: string, priority: number) => {
+    try {
+      await api.patch(`/goals/${goalId}`, { priority });
+      await queryClient.invalidateQueries('goals');
+      setEditingId(null);
+    } catch (err: any) {
+      console.error('Failed to update priority:', err);
     }
   };
 
@@ -121,6 +141,21 @@ export default function GoalsPage() {
                   className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm text-white"
                 />
               </label>
+
+              <label className="space-y-2 block">
+                <span className="text-sm text-slate-300">{t('common.priority')}</span>
+                <select
+                  value={newPriority}
+                  onChange={(e) => setNewPriority(parseInt(e.target.value, 10))}
+                  className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm text-white"
+                >
+                  <option value={0}>No Priority</option>
+                  <option value={1}>Low</option>
+                  <option value={2}>Medium</option>
+                  <option value={3}>High</option>
+                  <option value={4}>Urgent</option>
+                </select>
+              </label>
             </div>
 
             <div className="flex flex-wrap gap-3">
@@ -160,15 +195,66 @@ export default function GoalsPage() {
               {goal.description && (
                 <p className="text-sm text-slate-400">{goal.description}</p>
               )}
-              <span
-                className={`inline-block mt-2 px-2 py-1 rounded text-xs ${
-                  goal.status === 'active'
-                    ? 'bg-green-900 text-green-200'
-                    : 'bg-slate-700 text-slate-300'
-                }`}
-              >
-                {goal.status}
-              </span>
+              <div className="mt-2 flex flex-wrap gap-2 items-center">
+                {/* プロジェクトバッジ */}
+                <span className="px-2 py-0.5 rounded text-xs bg-sky-900 text-sky-200">
+                  {goal.project_name ?? '全体'}
+                </span>
+                <span
+                  className={`px-2 py-1 rounded text-xs ${
+                    goal.status === 'active'
+                      ? 'bg-green-900 text-green-200'
+                      : 'bg-slate-700 text-slate-300'
+                  }`}
+                >
+                  {goal.status}
+                </span>
+
+                {/* Priority selector */}
+                {editingId === goal.id ? (
+                  <select
+                    value={editingPriority}
+                    onChange={(e) => setEditingPriority(parseInt(e.target.value, 10))}
+                    onBlur={() => handleUpdatePriority(goal.id, editingPriority)}
+                    autoFocus
+                    className="px-2 py-1 rounded text-xs border border-slate-600 bg-slate-700 text-white"
+                  >
+                    <option value={0}>No Priority</option>
+                    <option value={1}>Low</option>
+                    <option value={2}>Medium</option>
+                    <option value={3}>High</option>
+                    <option value={4}>Urgent</option>
+                  </select>
+                ) : (
+                  <button
+                    onClick={() => {
+                      setEditingId(goal.id);
+                      setEditingPriority(goal.priority);
+                    }}
+                    className={`px-2 py-1 rounded text-xs cursor-pointer ${
+                      goal.priority === 0
+                        ? 'bg-slate-700 text-slate-400'
+                        : goal.priority === 1
+                        ? 'bg-blue-900 text-blue-200'
+                        : goal.priority === 2
+                        ? 'bg-yellow-900 text-yellow-200'
+                        : goal.priority === 3
+                        ? 'bg-orange-900 text-orange-200'
+                        : 'bg-red-900 text-red-200'
+                    }`}
+                  >
+                    {goal.priority === 0
+                      ? '-'
+                      : goal.priority === 1
+                      ? 'Low'
+                      : goal.priority === 2
+                      ? 'Medium'
+                      : goal.priority === 3
+                      ? 'High'
+                      : 'Urgent'}
+                  </button>
+                )}
+              </div>
             </div>
           ))}
         </div>

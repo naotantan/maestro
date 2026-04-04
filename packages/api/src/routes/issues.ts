@@ -1,6 +1,6 @@
 import { Router, type Router as RouterType } from 'express';
-import { getDb, issues, issue_comments, issue_goals, agents, goals } from '@maestro/db';
-import { eq, and, sql, desc } from 'drizzle-orm';
+import { getDb, issues, issue_comments, issue_goals, agents, goals, projects, agent_handoffs } from '@maestro/db';
+import { eq, and, sql, desc, inArray } from 'drizzle-orm';
 import { sanitizeString, sanitizePagination } from '../middleware/validate';
 
 const VALID_ISSUE_STATUSES = ['backlog', 'todo', 'in_progress', 'in_review', 'done', 'cancelled'] as const;
@@ -34,14 +34,30 @@ async function findOwnedAgent(db: ReturnType<typeof getDb>, companyId: string, a
   return rows[0] ?? null;
 }
 
-// GET /api/issues
+// GET /api/issues（project_nameをJOINで付与）
 issuesRouter.get('/', async (req, res, next) => {
   try {
     const { limit, offset } = sanitizePagination(req.query.limit, req.query.offset);
     const db = getDb();
     const rows = await db
-      .select()
+      .select({
+        id: issues.id,
+        company_id: issues.company_id,
+        project_id: issues.project_id,
+        project_name: projects.name,
+        identifier: issues.identifier,
+        title: issues.title,
+        description: issues.description,
+        status: issues.status,
+        priority: issues.priority,
+        assigned_to: issues.assigned_to,
+        created_by: issues.created_by,
+        created_at: issues.created_at,
+        updated_at: issues.updated_at,
+        completed_at: issues.completed_at,
+      })
       .from(issues)
+      .leftJoin(projects, eq(issues.project_id, projects.id))
       .where(eq(issues.company_id, req.companyId!))
       .orderBy(desc(issues.created_at))
       .limit(limit)
@@ -55,12 +71,13 @@ issuesRouter.get('/', async (req, res, next) => {
 // POST /api/issues
 issuesRouter.post('/', async (req, res, next) => {
   try {
-    const { title, description, status, priority, assigned_to } = req.body as {
+    const { title, description, status, priority, assigned_to, project_id } = req.body as {
       title?: string;
       description?: string;
       status?: string;
       priority?: number;
       assigned_to?: string;
+      project_id?: string;
     };
     if (!title) {
       res.status(400).json({
@@ -84,6 +101,17 @@ issuesRouter.post('/', async (req, res, next) => {
     const sanitizedTitle = sanitizeString(title);
     const sanitizedDescription = description ? sanitizeString(description) : description;
     const db = getDb();
+
+    // project_id の検証（指定された場合のみ）
+    if (project_id) {
+      const projectRows = await db.select({ id: projects.id }).from(projects)
+        .where(and(eq(projects.id, project_id), eq(projects.company_id, req.companyId!))).limit(1);
+      if (!projectRows.length) {
+        res.status(400).json({ error: 'validation_failed', message: 'project_id が無効です' });
+        return;
+      }
+    }
+
     // assigned_toが未指定の場合、有効なエージェントに自動アサイン
     let finalAssignedTo = assigned_to;
     if (finalAssignedTo && !(await findOwnedAgent(db, req.companyId!, finalAssignedTo))) {
@@ -126,6 +154,7 @@ issuesRouter.post('/', async (req, res, next) => {
         .insert(issues)
         .values({
           company_id: req.companyId!,
+          project_id: project_id ?? null,
           identifier,
           title: sanitizedTitle,
           description: sanitizedDescription,
@@ -169,12 +198,13 @@ issuesRouter.get('/:issueId', async (req, res, next) => {
 // PATCH /api/issues/:issueId
 issuesRouter.patch('/:issueId', async (req, res, next) => {
   try {
-    const { title, description, status, priority, assigned_to } = req.body as {
+    let { title, description, status, priority, assigned_to, project_id } = req.body as {
       title?: string;
       description?: string;
       status?: string;
       priority?: number;
       assigned_to?: string;
+      project_id?: string | null;
     };
 
     // status/priority の検証
@@ -195,6 +225,33 @@ issuesRouter.patch('/:issueId', async (req, res, next) => {
       });
       return;
     }
+    // project_id の検証（指定された場合のみ）
+    if (project_id) {
+      const projectRows = await db.select({ id: projects.id }).from(projects)
+        .where(and(eq(projects.id, project_id), eq(projects.company_id, req.companyId!))).limit(1);
+      if (!projectRows.length) {
+        res.status(400).json({ error: 'validation_failed', message: 'project_id が無効です' });
+        return;
+      }
+    }
+
+    // status が done に変わる場合、対応内容を追記
+    if (status === 'done') {
+      const currentIssue = await db.select({ description: issues.description })
+        .from(issues)
+        .where(eq(issues.id, req.params.issueId))
+        .limit(1);
+      const currentDesc = currentIssue[0]?.description ?? '';
+      // description が既に対応完了セクションを含む場合は追記しない
+      if (!currentDesc.includes('**対応完了**')) {
+        const resolvedAt = new Date().toISOString().slice(0, 16).replace('T', ' ');
+        const resolutionNote = description
+          ? `\n\n---\n**対応完了** (${resolvedAt})\n${description}`
+          : `\n\n---\n**対応完了** (${resolvedAt})\n手動で完了マークされました。`;
+        description = (currentDesc + resolutionNote).trim();
+      }
+    }
+
     const updated = await db
       .update(issues)
       .set({
@@ -203,6 +260,7 @@ issuesRouter.patch('/:issueId', async (req, res, next) => {
         ...(status && { status }),
         ...(priority !== undefined && { priority }),
         ...(assigned_to !== undefined && { assigned_to: assigned_to || null }),
+        ...(project_id !== undefined && { project_id: project_id ?? null }),
         updated_at: new Date(),
         ...(status === 'done' && { completed_at: new Date() }),
       })
@@ -217,6 +275,36 @@ issuesRouter.patch('/:issueId', async (req, res, next) => {
       res.status(404).json({ error: 'not_found', message: 'Issueが見つかりません' });
       return;
     }
+
+    // statusが変更された場合、紐付くゴールの進捗を自動再計算する
+    if (status) {
+      const linkedGoals = await db
+        .select({ goal_id: issue_goals.goal_id })
+        .from(issue_goals)
+        .where(eq(issue_goals.issue_id, req.params.issueId));
+
+      for (const { goal_id } of linkedGoals) {
+        const allLinks = await db
+          .select({ issue_id: issue_goals.issue_id })
+          .from(issue_goals)
+          .where(eq(issue_goals.goal_id, goal_id));
+
+        const issueIds = allLinks.map(l => l.issue_id);
+        let progress = 0;
+        if (issueIds.length > 0) {
+          const [result] = await db
+            .select({ count: sql<number>`count(*)` })
+            .from(issues)
+            .where(and(inArray(issues.id, issueIds), eq(issues.status, 'done')));
+          progress = Math.round((Number(result?.count ?? 0) / issueIds.length) * 100);
+        }
+        await db
+          .update(goals)
+          .set({ progress, updated_at: new Date() })
+          .where(eq(goals.id, goal_id));
+      }
+    }
+
     res.json({ data: updated[0] });
   } catch (err) {
     next(err);
@@ -369,14 +457,39 @@ issuesRouter.post('/:issueId/comments', async (req, res, next) => {
       });
       return;
     }
+    const sanitizedBody = sanitizeString(body);
     const comment = await db
       .insert(issue_comments)
       .values({
         issue_id: req.params.issueId,
         author_id: req.userId,
-        body: sanitizeString(body),
+        body: sanitizedBody,
       })
       .returning();
+
+    // @メンション検出 → agent_handoffs 生成
+    const mentions = body.match(/@([\w\u3040-\u9FFF\u30A0-\u30FF\-]+)/g) ?? [];
+    if (mentions.length > 0) {
+      const mentionNames = mentions.map(m => m.slice(1).toLowerCase());
+      const allAgents = await db
+        .select({ id: agents.id, name: agents.name })
+        .from(agents)
+        .where(and(eq(agents.company_id, req.companyId!), eq(agents.enabled, true)));
+      for (const name of mentionNames) {
+        const matched = allAgents.find(a => a.name.toLowerCase().includes(name));
+        if (matched) {
+          await db.insert(agent_handoffs).values({
+            company_id: req.companyId!,
+            from_agent_id: matched.id, // システム起点のため自己参照
+            to_agent_id: matched.id,
+            issue_id: req.params.issueId,
+            status: 'pending',
+            prompt: `Issue のコメントであなたがメンションされました: "${sanitizedBody}"`,
+          });
+        }
+      }
+    }
+
     res.status(201).json({ data: comment[0] });
   } catch (err) {
     next(err);

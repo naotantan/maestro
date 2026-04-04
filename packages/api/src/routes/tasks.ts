@@ -111,7 +111,7 @@ tasksRouter.get('/', async (req, res, next) => {
       ? and(eq(agents.company_id, req.companyId!), eq(agents.id, agentIdFilter))
       : eq(agents.company_id, req.companyId!);
 
-    const ownedAgents = await db.select({ id: agents.id }).from(agents).where(agentWhere).limit(1000);
+    const ownedAgents = await db.select({ id: agents.id }).from(agents).where(agentWhere);
     if (ownedAgents.length === 0) {
       res.json({ data: [], meta: { limit, offset } });
       return;

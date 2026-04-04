@@ -14,3 +14,5 @@ export * from './group-f';
 export * from './group-g';
 // グループH: Plugins・Audit（11テーブル）
 export * from './group-h';
+// グループI: note記事（1テーブル）
+export * from './group-i';

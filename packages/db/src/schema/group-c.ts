@@ -2,11 +2,14 @@ import {
   pgTable, text, varchar, integer, timestamp, uuid, index, primaryKey, unique
 } from 'drizzle-orm/pg-core';
 import { companies } from './group-a';
+import { projects } from './group-d';
 
 // C1: issues
 export const issues = pgTable('issues', {
   id: uuid('id').primaryKey().defaultRandom(),
   company_id: uuid('company_id').notNull().references(() => companies.id, { onDelete: 'cascade' }),
+  // どのプロジェクトに属するか（nullable = 組織横断の課題）
+  project_id: uuid('project_id').references(() => projects.id, { onDelete: 'set null' }),
   identifier: varchar('identifier', { length: 20 }).notNull(),
   title: varchar('title', { length: 255 }).notNull(),
   description: text('description'),
@@ -19,6 +22,7 @@ export const issues = pgTable('issues', {
   completed_at: timestamp('completed_at'),
 }, (table) => ({
   idxCompany: index('idx_issues_company').on(table.company_id),
+  idxProject: index('idx_issues_project').on(table.project_id),
   idxIdentifier: index('idx_issues_identifier').on(table.identifier),
   idxStatus: index('idx_issues_status').on(table.status),
   // 同一組織内で identifier が重複しないよう保証

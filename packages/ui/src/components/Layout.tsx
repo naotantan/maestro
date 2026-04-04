@@ -8,6 +8,7 @@ import {
   Activity,
   BellRing,
   Bot,
+  BookOpen,
   Briefcase,
   Building2,
   FolderKanban,
@@ -15,6 +16,7 @@ import {
   Goal,
   LogOut,
   Menu,
+  Plus,
   Receipt,
   Settings,
   ShieldCheck,
@@ -23,6 +25,7 @@ import {
   X,
   type LucideIcon,
 } from 'lucide-react';
+import { QuickInstructionModal } from './QuickInstructionModal.tsx';
 
 interface NavItem {
   to: string;
@@ -48,10 +51,9 @@ const navSections: NavSection[] = [
     titleKey: 'layout.sectionExecution',
     items: [
       { to: '/agents', labelKey: 'nav.agents', icon: Bot },
-      { to: '/issues', labelKey: 'layout.issues', icon: Briefcase },
-      { to: '/goals', labelKey: 'nav.goals', icon: Goal },
       { to: '/projects', labelKey: 'nav.projects', icon: FolderKanban },
       { to: '/routines', labelKey: 'nav.routines', icon: Workflow },
+      { to: '/sessions', labelKey: 'nav.sessions', icon: BookOpen },
     ],
   },
   {
@@ -68,7 +70,6 @@ const navSections: NavSection[] = [
 
 const mobilePrimaryNav = [
   { to: '/', labelKey: 'layout.home', icon: Gauge },
-  { to: '/issues', labelKey: 'layout.issues', icon: Briefcase },
   { to: '/agents', labelKey: 'nav.agents', icon: Bot },
   { to: '/approvals', labelKey: 'nav.approvals', icon: ShieldCheck },
   { to: '/settings', labelKey: 'nav.settings', icon: Settings },
@@ -189,6 +190,7 @@ export default function Layout() {
   const navigate = useNavigate();
   const location = useLocation();
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
+  const [isInstructionOpen, setIsInstructionOpen] = useState(false);
 
   function handleLogout() {
     authStore.logout();
@@ -266,6 +268,17 @@ export default function Layout() {
             <Outlet />
           </main>
 
+          {/* 常設「開発指示」ボタン（右下固定） */}
+          <button
+            type="button"
+            onClick={() => setIsInstructionOpen(true)}
+            className="fixed bottom-20 right-4 z-40 inline-flex items-center gap-2 rounded-full border border-sky-500/40 bg-sky-600/90 px-4 py-2.5 text-sm font-medium text-white shadow-lg shadow-sky-900/40 backdrop-blur transition-all hover:bg-sky-500 hover:shadow-sky-800/50 xl:bottom-6 xl:right-6"
+            title="開発指示を登録 (⌘I)"
+          >
+            <Plus className="h-4 w-4" />
+            <span>指示を登録</span>
+          </button>
+
           <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-white/10 bg-slate-950/95 px-2 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] pt-2 backdrop-blur xl:hidden">
             <div className="grid grid-cols-5 gap-1">
               {mobilePrimaryNav.map((item) => {
@@ -293,6 +306,12 @@ export default function Layout() {
           </nav>
         </div>
       </div>
+
+      {/* 開発指示モーダル */}
+      <QuickInstructionModal
+        open={isInstructionOpen}
+        onClose={() => setIsInstructionOpen(false)}
+      />
     </div>
   );
 }

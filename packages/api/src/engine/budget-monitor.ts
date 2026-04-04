@@ -1,5 +1,5 @@
 import { getDb, budget_policies, cost_events, agents, budget_incidents } from '@maestro/db';
-import { eq, sql } from 'drizzle-orm';
+import { eq, and, gte, sql } from 'drizzle-orm';
 
 const BUDGET_CHECK_INTERVAL_MS = parseInt(process.env.BUDGET_CHECK_INTERVAL_MS || '60000', 10); // 1分
 
@@ -26,9 +26,10 @@ async function checkBudgets(): Promise<void> {
         .select({ total: sql<string>`COALESCE(SUM(ce.cost_usd), 0)` })
         .from(cost_events)
         .innerJoin(agents, eq(cost_events.agent_id, agents.id))
-        .where(
-          sql`${agents.company_id} = ${policy.company_id} AND ${cost_events.created_at} >= ${periodStart}`
-        );
+        .where(and(
+          eq(agents.company_id, policy.company_id),  // プリペアドステートメントで安全に絞り込み
+          gte(cost_events.created_at, periodStart)
+        ));
 
       const totalCost = parseFloat(costResult[0]?.total ?? '0');
       const limitAmount = parseFloat(policy.limit_amount_usd as string);
