@@ -15,9 +15,9 @@ jobs:
       postgres:
         image: postgres:16
         env:
-          POSTGRES_USER: company
-          POSTGRES_PASSWORD: company
-          POSTGRES_DB: company_dev
+          POSTGRES_USER: maestro
+          POSTGRES_PASSWORD: maestro
+          POSTGRES_DB: maestro_dev
         ports:
           - 5432:5432
         options: >-
@@ -43,10 +43,10 @@ jobs:
 
       - name: Build shared packages
         run: |
-          pnpm --filter @company/shared build
-          pnpm --filter @company/db build
-          pnpm --filter @company/i18n build
-          pnpm --filter @company/adapters build
+          pnpm --filter @maestro/shared build
+          pnpm --filter @maestro/db build
+          pnpm --filter @maestro/i18n build
+          pnpm --filter @maestro/adapters build
 
       - name: Typecheck
         run: pnpm typecheck
@@ -54,6 +54,6 @@ jobs:
       - name: Test
         run: pnpm test
         env:
-          DATABASE_URL: postgresql://company:company@localhost:5432/company_dev
+          DATABASE_URL: postgresql://maestro:maestro@localhost:5432/maestro_dev
           JWT_SECRET: test-secret-for-ci
           ENCRYPTION_KEY: 0000000000000000000000000000000000000000000000000000000000000000

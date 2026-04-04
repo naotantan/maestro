@@ -3,7 +3,7 @@ import chalk from 'chalk';
 import ora from 'ora';
 import { getConfig } from '../config.js';
 import { apiRequest, checkAuth } from '../api.js';
-import type { Company } from '@company/shared';
+import type { Company } from '@maestro/shared';
 
 // /api/org/members は company_memberships テーブルを返す（users JOIN なし）
 interface Member {

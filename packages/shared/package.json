@@ -1,5 +1,5 @@
 {
-  "name": "@company/shared",
+  "name": "@maestro/shared",
   "version": "0.1.0",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -16,7 +16,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/naotantan/company-cli",
+    "url": "https://github.com/naotantan/maestro",
     "directory": "packages/shared"
   }
 }

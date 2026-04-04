@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { useTranslation } from '@company/i18n';
+import { useTranslation } from '@maestro/i18n';
 import { Button } from '../components/ui';
 
 export default function NotFoundPage() {

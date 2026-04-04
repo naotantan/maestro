@@ -1,16 +1,16 @@
 /**
  * Heartbeatエンジン
  * - 有効なエージェントを定期的に起動し、ハートビート実行を記録する
- * - @company/adapters の createAdapter でエージェントタイプに応じたアダプターを生成
+ * - @maestro/adapters の createAdapter でエージェントタイプに応じたアダプターを生成
  * - クラッシュ時はcrash-recoveryモジュールと連携して自動回復する
  */
 
-import { getDb, agents, heartbeat_runs, heartbeat_run_events, agent_runtime_state, agent_handoffs, agent_task_sessions } from '@company/db';
+import { getDb, agents, heartbeat_runs, heartbeat_run_events, agent_runtime_state, agent_handoffs, agent_task_sessions } from '@maestro/db';
 import { eq, and, desc } from 'drizzle-orm';
-import type { AgentType } from '@company/shared';
+import type { AgentType } from '@maestro/shared';
 
-// @company/adapters は ESM のため CJS コンテキストから static import できない。
-// dynamic import で使用する。AdapterConfig は @company/adapters/base.ts と
+// @maestro/adapters は ESM のため CJS コンテキストから static import できない。
+// dynamic import で使用する。AdapterConfig は @maestro/adapters/base.ts と
 // 同一形状を維持する必要がある（乖離防止のため型コメントで出典を明記）。
 // 出典: packages/adapters/src/base.ts AdapterConfig
 type AdapterConfig = {
@@ -59,8 +59,8 @@ async function runAgentHeartbeat(
     });
 
     // アダプターを生成してハートビートを確認
-    // @company/adapters は ESM のため dynamic import で読み込む
-    const { createAdapter } = await import('@company/adapters');
+    // @maestro/adapters は ESM のため dynamic import で読み込む
+    const { createAdapter } = await import('@maestro/adapters');
     const adapter = createAdapter(agentType, agentConfig);
     const heartbeatResult = await adapter.heartbeat();
 
@@ -193,7 +193,7 @@ async function processHandoffs(): Promise<void> {
         const toAgent = toAgentRows[0];
 
         // アダプター経由でタスク実行
-        const { createAdapter } = await import('@company/adapters');
+        const { createAdapter } = await import('@maestro/adapters');
         const adapter = createAdapter(toAgent.type as AgentType, (toAgent.config as AdapterConfig) ?? {});
         const response = await adapter.runTask({
           taskId: handoff.id,

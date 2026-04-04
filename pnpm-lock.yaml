@@ -41,7 +41,7 @@ importers:
       '@anthropic-ai/sdk':
         specifier: ^0.82.0
         version: 0.82.0(zod@3.25.76)
-      '@company/shared':
+      '@maestro/shared':
         specifier: workspace:*
         version: link:../shared
       node-fetch:
@@ -63,13 +63,13 @@ importers:
 
   packages/api:
     dependencies:
-      '@company/adapters':
+      '@maestro/adapters':
         specifier: workspace:*
         version: link:../adapters
-      '@company/db':
+      '@maestro/db':
         specifier: workspace:*
         version: link:../db
-      '@company/shared':
+      '@maestro/shared':
         specifier: workspace:*
         version: link:../shared
       bcryptjs:
@@ -136,7 +136,7 @@ importers:
 
   packages/cli:
     dependencies:
-      '@company/shared':
+      '@maestro/shared':
         specifier: workspace:*
         version: link:../shared
       chalk:
@@ -235,10 +235,10 @@ importers:
 
   packages/ui:
     dependencies:
-      '@company/i18n':
+      '@maestro/i18n':
         specifier: workspace:*
         version: link:../i18n
-      '@company/shared':
+      '@maestro/shared':
         specifier: workspace:*
         version: link:../shared
       axios:

@@ -1,5 +1,5 @@
 import { Router, type Router as RouterType } from 'express';
-import { getDb, activity_log } from '@company/db';
+import { getDb, activity_log } from '@maestro/db';
 import { eq, desc } from 'drizzle-orm';
 
 export const activityRouter: RouterType = Router();

@@ -1,7 +1,7 @@
 import { useQuery } from 'react-query';
 import { Link } from 'react-router-dom';
 import { Activity, ArrowRight, Bot, ClipboardList, ShieldCheck, Zap } from 'lucide-react';
-import { useTranslation } from '@company/i18n';
+import { useTranslation } from '@maestro/i18n';
 import api from '../lib/api.ts';
 import { formatDate } from '../lib/date.ts';
 import {

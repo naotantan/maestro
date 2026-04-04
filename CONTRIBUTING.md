@@ -1,4 +1,4 @@
-# Contributing to company-cli
+# Contributing to maestro
 
 ご貢献ありがとうございます！このドキュメントでは、バグ報告・機能提案・プルリクエストの手順を説明します。
 
@@ -14,8 +14,8 @@
 
 ```bash
 # リポジトリをクローン
-git clone https://github.com/naotantan/company-cli.git
-cd company-cli
+git clone https://github.com/naotantan/maestro.git
+cd maestro
 
 # 依存関係のインストール
 pnpm install
@@ -67,13 +67,13 @@ GitHub Issues で提案してください。「feature request」ラベルを付
 
 ```bash
 # 依存関係の順序（上から下へ）
-pnpm --filter @company/shared build
-pnpm --filter @company/db build
-pnpm --filter @company/i18n build
-pnpm --filter @company/adapters build
-pnpm --filter @company/api build
-pnpm --filter @company/cli build
-pnpm --filter @company/ui build
+pnpm --filter @maestro/shared build
+pnpm --filter @maestro/db build
+pnpm --filter @maestro/i18n build
+pnpm --filter @maestro/adapters build
+pnpm --filter @maestro/api build
+pnpm --filter @maestro/cli build
+pnpm --filter @maestro/ui build
 
 # 全パッケージを一括ビルドする場合（トポロジカル順に自動解決）
 pnpm build

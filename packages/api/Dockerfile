@@ -22,10 +22,10 @@ COPY packages/api ./packages/api
 COPY tsconfig.base.json ./
 
 # ビルド
-RUN pnpm --filter @company/shared build
-RUN pnpm --filter @company/adapters build
-RUN pnpm --filter @company/db build
-RUN pnpm --filter @company/api build
+RUN pnpm --filter @maestro/shared build
+RUN pnpm --filter @maestro/adapters build
+RUN pnpm --filter @maestro/db build
+RUN pnpm --filter @maestro/api build
 
 # 本番イメージ
 FROM node:20-alpine

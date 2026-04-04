@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useQuery, useQueryClient } from 'react-query';
 import { Link } from 'react-router-dom';
-import { type AgentType } from '@company/shared';
-import { useTranslation } from '@company/i18n';
+import { type AgentType } from '@maestro/shared';
+import { useTranslation } from '@maestro/i18n';
 import api from '../../lib/api.ts';
 import { formatDate } from '../../lib/date.ts';
 import { Button, Card, CardBody, Badge, LoadingSpinner, EmptyState, Alert } from '../../components/ui';

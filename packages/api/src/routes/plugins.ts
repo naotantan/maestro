@@ -1,5 +1,5 @@
 import { Router, type Router as RouterType } from 'express';
-import { getDb, plugins, plugin_jobs, plugin_job_runs, plugin_webhooks } from '@company/db';
+import { getDb, plugins, plugin_jobs, plugin_job_runs, plugin_webhooks } from '@maestro/db';
 import { eq, and } from 'drizzle-orm';
 import { promises as dns } from 'dns';
 import { isIP } from 'net';

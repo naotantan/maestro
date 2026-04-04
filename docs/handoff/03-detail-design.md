@@ -124,7 +124,7 @@ async function processHandoffs(): Promise<void> {
       if (!toAgent[0]) throw new Error('to_agent が見つかりません');
 
       // 5. アダプター実行
-      const { createAdapter } = await import('@company/adapters');
+      const { createAdapter } = await import('@maestro/adapters');
       const adapter = createAdapter(toAgent[0].type as AgentType, toAgent[0].config ?? {});
       const response = await adapter.runTask({
         taskId: handoff.id,

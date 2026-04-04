@@ -1,5 +1,5 @@
 {
-  "name": "@company/api",
+  "name": "@maestro/api",
   "version": "0.1.0",
   "main": "dist/index.js",
   "scripts": {
@@ -10,9 +10,9 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@company/adapters": "workspace:*",
-    "@company/db": "workspace:*",
-    "@company/shared": "workspace:*",
+    "@maestro/adapters": "workspace:*",
+    "@maestro/db": "workspace:*",
+    "@maestro/shared": "workspace:*",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "dotenv": "^16.4.0",
@@ -40,7 +40,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/naotantan/company-cli",
+    "url": "https://github.com/naotantan/maestro",
     "directory": "packages/api"
   }
 }

@@ -5,7 +5,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import request from 'supertest';
 import { createApp } from '../server.js';
-import { getDb } from '@company/db';
+import { getDb } from '@maestro/db';
 
 // 認証ミドルウェアをモック（companyId を注入）
 vi.mock('../middleware/auth.js', () => ({

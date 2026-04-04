@@ -1,8 +1,8 @@
 import { Router, type Router as RouterType } from 'express';
-import { getDb, companies, company_memberships, board_api_keys } from '@company/db';
+import { getDb, companies, company_memberships, board_api_keys } from '@maestro/db';
 import { eq } from 'drizzle-orm';
 import { generateApiKey } from '../utils/crypto';
-import { API_KEY_PREFIXES } from '@company/shared';
+import { API_KEY_PREFIXES } from '@maestro/shared';
 import { sanitizeString } from '../middleware/validate';
 
 export const companiesRouter: RouterType = Router();

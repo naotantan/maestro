@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import request from 'supertest';
 import { createApp } from '../server.js';
-import { getDb } from '@company/db';
+import { getDb } from '@maestro/db';
 
 describe('POST /api/auth/register', () => {
   const app = createApp();

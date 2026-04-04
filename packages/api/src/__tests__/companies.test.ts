@@ -12,7 +12,7 @@ vi.mock('../middleware/auth.js', () => ({
 
 describe('GET /api/companies', () => {
   it('should return 404 if company not found', async () => {
-    const { getDb } = await import('@company/db');
+    const { getDb } = await import('@maestro/db');
     const mockDb = {
       select: vi.fn().mockReturnThis(),
       from: vi.fn().mockReturnThis(),
@@ -29,7 +29,7 @@ describe('GET /api/companies', () => {
   });
 
   it('should return company data if found', async () => {
-    const { getDb } = await import('@company/db');
+    const { getDb } = await import('@maestro/db');
     const mockCompany = { id: 'company-test-id', name: 'Test Corp', createdAt: new Date() };
     const mockDb = {
       select: vi.fn().mockReturnThis(),

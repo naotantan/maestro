@@ -373,7 +373,12 @@
     "backupNotifications": "通知設定",
     "backupNotifyEmail": "通知先メールアドレス",
     "backupNotifyOnFailure": "失敗時に通知",
-    "backupNotifyOnSuccess": "成功時に通知"
+    "backupNotifyOnSuccess": "成功時に通知",
+    "pluginsTitle": "プラグイン管理",
+    "pluginsDesc": "インストール済みプラグインの有効／無効とアンインストールを管理します",
+    "pluginsAdd": "+ 追加",
+    "pluginsInstallTitle": "新規プラグインをインストール",
+    "pluginsUninstallConfirm": "「{{name}}」をアンインストールしますか？"
   },
   "org": {
     "title": "組織",

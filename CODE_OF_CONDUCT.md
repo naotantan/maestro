@@ -54,9 +54,9 @@ This Code of Conduct applies within all community spaces, and also applies when 
 
 ## 施行 / Enforcement
 
-虐待的・ハラスメント的・またはその他の許容されない行動の事例は、[GitHub Issues](https://github.com/naotantan/company-cli/issues) またはプロジェクトメンテナーに直接ご報告ください。
+虐待的・ハラスメント的・またはその他の許容されない行動の事例は、[GitHub Issues](https://github.com/naotantan/maestro/issues) またはプロジェクトメンテナーに直接ご報告ください。
 
-Instances of abusive, harassing, or otherwise unacceptable behavior may be reported to the project maintainers via [GitHub Issues](https://github.com/naotantan/company-cli/issues) or by contacting the maintainers directly.
+Instances of abusive, harassing, or otherwise unacceptable behavior may be reported to the project maintainers via [GitHub Issues](https://github.com/naotantan/maestro/issues) or by contacting the maintainers directly.
 
 すべての苦情は迅速かつ公正に審査・調査されます。
 

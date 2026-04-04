@@ -8,7 +8,7 @@ import { saveConfig } from '../config.js';
 const execAsync = promisify(exec);
 
 export const initCommand = new Command('init')
-  .description('初期化: Docker または ネイティブ方式で .company CLI をセットアップします')
+  .description('初期化: Docker または ネイティブ方式で .maestro CLI をセットアップします')
   .option('--docker', 'Docker Compose 方式（推奨）')
   .option('--native', 'ネイティブ方式（既存 PostgreSQL を使用）')
   .option('--db-url <url>', 'PostgreSQL 接続 URL（--native 使用時必須）')
@@ -19,14 +19,14 @@ export const initCommand = new Command('init')
     dbUrl?: string;
     quiet?: boolean;
   }) => {
-    console.log(chalk.bold('\n🏢 .company CLI 初期化\n'));
+    console.log(chalk.bold('\n🏢 .maestro CLI 初期化\n'));
 
     // 方式の決定
     const mode = options.native ? 'native' : 'docker';
 
     if (mode === 'native' && !options.dbUrl) {
       console.error(chalk.red('エラー: --native 使用時は --db-url が必要です。'));
-      console.error('例: company init --native --db-url postgresql://user:pass@localhost:5432/company');
+      console.error('例: maestro init --native --db-url postgresql://user:pass@localhost:5432/maestro');
       process.exit(1);
     }
 
@@ -48,8 +48,8 @@ async function initDocker(_quiet: boolean): Promise<void> {
       spinner.fail('Docker がインストールされていません。');
       console.error(chalk.red('\n対応:'));
       console.error('  1. Docker Desktop をインストールしてください: https://www.docker.com/products/docker-desktop');
-      console.error('  2. 再度 company init を実行してください');
-      console.error('\n詳しくは: company doctor');
+      console.error('  2. 再度 maestro init を実行してください');
+      console.error('\n詳しくは: maestro doctor');
       process.exit(1);
     }
 
@@ -61,7 +61,7 @@ async function initDocker(_quiet: boolean): Promise<void> {
       spinner.fail('Docker Desktop が起動していません。');
       console.error(chalk.red('\n対応:'));
       console.error('  1. Docker Desktop を起動してください');
-      console.error('  2. 再度 company init を実行してください');
+      console.error('  2. 再度 maestro init を実行してください');
       process.exit(1);
     }
 
@@ -83,7 +83,7 @@ async function initDocker(_quiet: boolean): Promise<void> {
     let ready = false;
     for (let i = 0; i < 30; i++) {
       try {
-        await execAsync('docker exec company-postgres pg_isready -U company -d company');
+        await execAsync('docker exec maestro-postgres pg_isready -U maestro -d maestro');
         ready = true;
         break;
       } catch {
@@ -106,16 +106,16 @@ async function initDocker(_quiet: boolean): Promise<void> {
     });
 
     // 完了メッセージ
-    console.log(chalk.green('\n✅ .company CLI が初期化されました\n'));
+    console.log(chalk.green('\n✅ .maestro CLI が初期化されました\n'));
     console.log(chalk.bold('📋 設定情報:'));
     console.log('  インストール方式: Docker');
     console.log('  データベース: PostgreSQL 17 (localhost:5432)');
     console.log('  API URL: http://localhost:3000');
     console.log('  言語: 日本語\n');
     console.log(chalk.bold('📖 次のステップ:'));
-    console.log('  1. company doctor    # 環境診断を実行');
-    console.log('  2. company ui        # Web UI をブラウザで開く（実装予定）');
-    console.log('\n💡 ヘルプ: company --help\n');
+    console.log('  1. maestro doctor    # 環境診断を実行');
+    console.log('  2. maestro ui        # Web UI をブラウザで開く（実装予定）');
+    console.log('\n💡 ヘルプ: maestro --help\n');
 
   } catch (err) {
     spinner.fail('初期化中にエラーが発生しました。');
@@ -148,14 +148,14 @@ async function initNative(dbUrl: string, _quiet: boolean): Promise<void> {
       createdAt: new Date().toISOString(),
     });
 
-    console.log(chalk.green('\n✅ .company CLI（ネイティブ方式）が初期化されました\n'));
+    console.log(chalk.green('\n✅ .maestro CLI（ネイティブ方式）が初期化されました\n'));
     console.log(chalk.bold('📋 設定情報:'));
     console.log('  インストール方式: ネイティブ');
     console.log(`  データベース: ${dbUrl.replace(/:[^:@]+@/, ':***@')}`);
     console.log('  API URL: http://localhost:3000\n');
     console.log(chalk.bold('📖 次のステップ:'));
-    console.log('  1. company doctor    # 環境診断を実行');
-    console.log('\n💡 ヘルプ: company --help\n');
+    console.log('  1. maestro doctor    # 環境診断を実行');
+    console.log('\n💡 ヘルプ: maestro --help\n');
 
   } catch (err) {
     spinner.fail('PostgreSQL 接続に失敗しました。');
@@ -163,7 +163,7 @@ async function initNative(dbUrl: string, _quiet: boolean): Promise<void> {
     console.error('\n対応:');
     console.error('  1. --db-url の接続文字列を確認してください');
     console.error('  2. PostgreSQL が起動しているか確認してください');
-    console.error('\n詳しくは: company doctor');
+    console.error('\n詳しくは: maestro doctor');
     process.exit(1);
   }
 }

@@ -1,4 +1,4 @@
-import { useTranslation } from '@company/i18n';
+import { useTranslation } from '@maestro/i18n';
 import { EmptyState } from '../components/ui';
 
 export default function InboxPage() {

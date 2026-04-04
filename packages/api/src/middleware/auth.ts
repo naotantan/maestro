@@ -1,5 +1,5 @@
 import type { Request, Response, NextFunction } from 'express';
-import { getDb, board_api_keys } from '@company/db';
+import { getDb, board_api_keys } from '@maestro/db';
 import { eq } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
 import { logAuthFailure } from './audit';

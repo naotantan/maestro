@@ -41,7 +41,7 @@ Paste error messages or stack traces here
 | OS | |
 | Node.js バージョン / version | |
 | pnpm バージョン / version | |
-| company-cli バージョン / version | |
+| maestro バージョン / version | |
 | Docker バージョン / version（使用している場合 / if applicable） | |
 
 ## 追加情報 / Additional Context

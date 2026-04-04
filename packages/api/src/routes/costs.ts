@@ -1,5 +1,5 @@
 import { Router, type Router as RouterType } from 'express';
-import { getDb, cost_events, budget_policies, agents } from '@company/db';
+import { getDb, cost_events, budget_policies, agents } from '@maestro/db';
 import { eq, gte, desc, and } from 'drizzle-orm';
 
 export const costsRouter: RouterType = Router();

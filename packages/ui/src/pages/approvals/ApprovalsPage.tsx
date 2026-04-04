@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useQueryClient } from 'react-query';
 import { Link } from 'react-router-dom';
-import { useTranslation } from '@company/i18n';
+import { useTranslation } from '@maestro/i18n';
 import { ArrowRight, CheckCircle2, Clock3, UserRound } from 'lucide-react';
 import { clsx } from 'clsx';
 import api from '../../lib/api.ts';

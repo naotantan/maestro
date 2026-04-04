@@ -1,7 +1,18 @@
 import { useState, useEffect } from 'react';
-import { useTranslation } from '@company/i18n';
-import i18n from '@company/i18n';
+import { useQuery, useQueryClient } from 'react-query';
+import { useTranslation } from '@maestro/i18n';
+import i18n from '@maestro/i18n';
 import api from '../../lib/api.ts';
+
+interface Plugin {
+  id: string;
+  name: string;
+  description?: string;
+  repository_url?: string;
+  version: string;
+  enabled: boolean;
+  created_at: string;
+}
 
 export default function SettingsPage() {
   const { t } = useTranslation();
@@ -34,6 +45,57 @@ export default function SettingsPage() {
   const [backupNotifyEmail, setBackupNotifyEmail] = useState('');
   const [backupNotifyOnFailure, setBackupNotifyOnFailure] = useState(true);
   const [backupNotifyOnSuccess, setBackupNotifyOnSuccess] = useState(false);
+
+  // プラグイン管理
+  const queryClient = useQueryClient();
+  const [showPluginForm, setShowPluginForm] = useState(false);
+  const [newPluginName, setNewPluginName] = useState('');
+  const [newPluginRepoUrl, setNewPluginRepoUrl] = useState('');
+
+  const { data: plugins } = useQuery<Plugin[]>(
+    'settings-plugins',
+    () => api.get('/plugins').then((r) => r.data.data),
+  );
+
+  const handlePluginInstall = async () => {
+    if (!newPluginName.trim()) return;
+    try {
+      await api.post('/plugins', {
+        name: newPluginName.trim(),
+        ...(newPluginRepoUrl.trim() ? { repository_url: newPluginRepoUrl.trim() } : {}),
+      });
+      setNewPluginName('');
+      setNewPluginRepoUrl('');
+      setShowPluginForm(false);
+      queryClient.invalidateQueries('settings-plugins');
+      queryClient.invalidateQueries('plugins');
+      showMessage('success', t('settings.saved'));
+    } catch {
+      showMessage('error', t('errors.serverError'));
+    }
+  };
+
+  const handlePluginToggle = async (plugin: Plugin) => {
+    try {
+      await api.patch(`/plugins/${plugin.id}`, { is_active: !plugin.enabled });
+      queryClient.invalidateQueries('settings-plugins');
+      queryClient.invalidateQueries('plugins');
+    } catch {
+      showMessage('error', t('errors.serverError'));
+    }
+  };
+
+  const handlePluginUninstall = async (plugin: Plugin) => {
+    if (!window.confirm(t('settings.pluginsUninstallConfirm', { name: plugin.name }))) return;
+    try {
+      await api.delete(`/plugins/${plugin.id}`);
+      queryClient.invalidateQueries('settings-plugins');
+      queryClient.invalidateQueries('plugins');
+      showMessage('success', t('settings.saved'));
+    } catch {
+      showMessage('error', t('errors.serverError'));
+    }
+  };
 
   // UI状態
   const [saving, setSaving] = useState('');  // セクション名
@@ -507,6 +569,99 @@ export default function SettingsPage() {
         >
           {saving === 'backup' ? t('common.loading') : t('common.save')}
         </button>
+      </div>
+
+      {/* プラグイン管理 */}
+      <div className="bg-slate-800 rounded-lg p-6 border border-slate-700 space-y-4">
+        <div className="flex justify-between items-start">
+          <div>
+            <h2 className="text-lg font-bold">{t('settings.pluginsTitle')}</h2>
+            <p className="text-sm text-slate-400 mt-1">{t('settings.pluginsDesc')}</p>
+          </div>
+          <button
+            onClick={() => setShowPluginForm(true)}
+            className="bg-sky-600 hover:bg-sky-700 px-3 py-1.5 rounded text-sm font-medium shrink-0"
+          >
+            {t('settings.pluginsAdd')}
+          </button>
+        </div>
+
+        {/* インストールフォーム */}
+        {showPluginForm && (
+          <div className="bg-slate-700 rounded-lg p-4 border border-slate-600 space-y-3">
+            <h3 className="text-sm font-bold">{t('settings.pluginsInstallTitle')}</h3>
+            <input
+              type="text"
+              value={newPluginName}
+              onChange={(e) => setNewPluginName(e.target.value)}
+              placeholder={t('plugins.pluginNamePlaceholder')}
+              className="w-full bg-slate-600 border border-slate-500 rounded px-3 py-2 text-white text-sm"
+            />
+            <input
+              type="text"
+              value={newPluginRepoUrl}
+              onChange={(e) => setNewPluginRepoUrl(e.target.value)}
+              placeholder={t('plugins.repositoryUrlPlaceholder')}
+              className="w-full bg-slate-600 border border-slate-500 rounded px-3 py-2 text-white text-sm"
+            />
+            <div className="flex gap-2">
+              <button
+                onClick={handlePluginInstall}
+                disabled={!newPluginName.trim()}
+                className="bg-sky-600 hover:bg-sky-700 disabled:opacity-50 px-4 py-2 rounded text-sm font-medium"
+              >
+                {t('plugins.install')}
+              </button>
+              <button
+                onClick={() => { setShowPluginForm(false); setNewPluginName(''); setNewPluginRepoUrl(''); }}
+                className="bg-slate-600 hover:bg-slate-500 px-4 py-2 rounded text-sm font-medium"
+              >
+                {t('common.cancel')}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* インストール済みプラグイン一覧 */}
+        {(plugins ?? []).length === 0 ? (
+          <p className="text-slate-400 text-sm py-4 text-center">{t('plugins.noPluginsInstalled')}</p>
+        ) : (
+          <div className="space-y-2">
+            {(plugins ?? []).map((plugin) => (
+              <div
+                key={plugin.id}
+                className="flex items-center justify-between bg-slate-700 rounded-lg px-4 py-3 border border-slate-600"
+              >
+                <div className="min-w-0">
+                  <p className="font-medium text-sm truncate">{plugin.name}</p>
+                  {plugin.repository_url && (
+                    <p className="text-slate-400 text-xs truncate mt-0.5">{plugin.repository_url}</p>
+                  )}
+                </div>
+                <div className="flex items-center gap-2 shrink-0 ml-3">
+                  {/* 有効/無効トグル */}
+                  <button
+                    onClick={() => handlePluginToggle(plugin)}
+                    className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
+                      plugin.enabled
+                        ? 'bg-green-700 hover:bg-green-800 text-green-100'
+                        : 'bg-slate-500 hover:bg-slate-400 text-slate-300'
+                    }`}
+                  >
+                    {plugin.enabled ? t('plugins.enabled') : t('plugins.disabled')}
+                  </button>
+                  {/* アンインストール */}
+                  <button
+                    onClick={() => handlePluginUninstall(plugin)}
+                    className="px-3 py-1 rounded text-xs font-medium bg-red-900 hover:bg-red-800 text-red-200 transition-colors"
+                  >
+                    {t('plugins.uninstall')}
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

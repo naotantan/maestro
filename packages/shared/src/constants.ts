@@ -52,5 +52,5 @@ export const SUPPORTED_LANGUAGES = ['ja', 'en'] as const;
 export type SupportedLanguage = typeof SUPPORTED_LANGUAGES[number];
 
 // CLI 設定パス
-export const CLI_CONFIG_DIR = '.company-cli';
+export const CLI_CONFIG_DIR = '.maestro';
 export const CLI_CONFIG_FILE = 'config.json';

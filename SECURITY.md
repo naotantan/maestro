@@ -25,7 +25,7 @@ The following versions are currently supported with security updates.
 Please report using one of the following methods:
 
 1. **GitHub Security Advisories（推奨 / Recommended）**
-   - [https://github.com/naotantan/company-cli/security/advisories/new](https://github.com/naotantan/company-cli/security/advisories/new) から非公開で報告できます
+   - [https://github.com/naotantan/maestro/security/advisories/new](https://github.com/naotantan/maestro/security/advisories/new) から非公開で報告できます
    - You can report privately via the link above
 
 2. **直接連絡 / Direct Contact**
@@ -76,9 +76,9 @@ We will keep you informed of the investigation progress.
 
 ## セキュリティ設計について / Security Design
 
-company-cli は以下のセキュリティ設計を採用しています：
+maestro は以下のセキュリティ設計を採用しています：
 
-company-cli adopts the following security measures:
+maestro adopts the following security measures:
 
 - **APIキー認証**: Bearer トークンによる全 API エンドポイントの保護
   **API key authentication**: All API endpoints protected with Bearer tokens

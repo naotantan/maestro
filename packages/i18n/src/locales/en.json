@@ -373,7 +373,12 @@
     "backupNotifications": "Notifications",
     "backupNotifyEmail": "Notification email address",
     "backupNotifyOnFailure": "Notify on failure",
-    "backupNotifyOnSuccess": "Notify on success"
+    "backupNotifyOnSuccess": "Notify on success",
+    "pluginsTitle": "Plugin Management",
+    "pluginsDesc": "Manage installed plugins — enable, disable, or uninstall.",
+    "pluginsAdd": "+ Add",
+    "pluginsInstallTitle": "Install New Plugin",
+    "pluginsUninstallConfirm": "Uninstall \"{{name}}\"?"
   },
   "org": {
     "title": "Organization",

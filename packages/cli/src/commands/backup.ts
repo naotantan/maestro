@@ -9,7 +9,7 @@ import { join } from 'path';
 
 const execAsync = promisify(exec);
 
-const BACKUP_DIR = join(homedir(), '.company-cli', 'backups');
+const BACKUP_DIR = join(homedir(), '.maestro', 'backups');
 
 export const backupCommand = new Command('backup')
   .description('バックアップ管理')
@@ -34,7 +34,7 @@ export const backupCommand = new Command('backup')
           // Docker を使用して pg_dump を実行
           // 実装例（実際の接続情報は環境に応じて調整が必要）
           await execAsync(
-            `docker exec company-postgres pg_dump -U company company > "${backupFile}"`,
+            `docker exec maestro-postgres pg_dump -U maestro maestro > "${backupFile}"`,
           );
 
           spinner.succeed('バックアップ作成完了');

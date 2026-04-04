@@ -1,4 +1,4 @@
-# @company/i18n
+# @maestro/i18n
 
 インターナショナライゼーション（i18n）パッケージ。React アプリケーションにマルチ言語対応を提供します。
 
@@ -23,13 +23,13 @@ pnpm install
 ### 1. 初期化（main.tsx で自動実行）
 
 ```typescript
-import '@company/i18n'; // 副作用インポート
+import '@maestro/i18n'; // 副作用インポート
 ```
 
 ### 2. コンポーネントで使用
 
 ```typescript
-import { useTranslation } from '@company/i18n';
+import { useTranslation } from '@maestro/i18n';
 
 export function MyComponent() {
   const { t } = useTranslation();
@@ -41,7 +41,7 @@ export function MyComponent() {
 ### 3. 言語変更
 
 ```typescript
-import i18n from '@company/i18n';
+import i18n from '@maestro/i18n';
 
 const handleLanguageChange = (lang: string) => {
   i18n.changeLanguage(lang);
@@ -83,7 +83,7 @@ const handleLanguageChange = (lang: string) => {
 1. 既存キーの更新は `src/locales/ja.json` と `src/locales/en.json` を編集
 2. 機能単位の追加は `src/locales/features/` 配下に `*-ja.json` / `*-en.json` を作成
 3. `src/index.ts` の `mergeTranslations(...)` に新しい feature locale を追加
-4. パッケージを rebuild：`pnpm --filter @company/i18n build`
+4. パッケージを rebuild：`pnpm --filter @maestro/i18n build`
 
 ## Interpolation
 
@@ -106,11 +106,11 @@ t('dashboard.welcome', { name: 'Taro' });
 ## Building
 
 ```bash
-pnpm --filter @company/i18n build
+pnpm --filter @maestro/i18n build
 ```
 
 ## Type Checking
 
 ```bash
-pnpm --filter @company/i18n typecheck
+pnpm --filter @maestro/i18n typecheck
 ```

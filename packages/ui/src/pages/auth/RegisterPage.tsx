@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { useTranslation } from '@company/i18n';
+import { useTranslation } from '@maestro/i18n';
 import api from '../../lib/api.ts';
 import { authStore } from '../../stores/auth.ts';
 import { Button, Alert } from '../../components/ui';
@@ -52,7 +52,7 @@ export default function RegisterPage() {
         <div className="text-center mb-8">
           <div className="text-4xl font-bold mb-2">
             <span className="bg-gradient-to-r from-sky-400 to-sky-600 bg-clip-text text-transparent">
-              .company
+              .maestro
             </span>
           </div>
           <p className="text-slate-400">{t('auth.platformTagline')}</p>
@@ -183,7 +183,7 @@ export default function RegisterPage() {
         </div>
 
         <p className="text-center text-slate-500 text-xs mt-6">
-          © 2024 .company. All rights reserved.
+          © 2024 .maestro. All rights reserved.
         </p>
       </div>
     </div>

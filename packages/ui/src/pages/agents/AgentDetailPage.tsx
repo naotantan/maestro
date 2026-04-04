@@ -1,7 +1,7 @@
 import { useParams } from 'react-router-dom';
 import { useQuery } from 'react-query';
-import { type AgentType } from '@company/shared';
-import { useTranslation } from '@company/i18n';
+import { type AgentType } from '@maestro/shared';
+import { useTranslation } from '@maestro/i18n';
 import api from '../../lib/api.ts';
 import { formatDate } from '../../lib/date.ts';
 import { Alert, Badge, Card, CardBody, CardHeader, EmptyState, LoadingSpinner } from '../../components/ui';

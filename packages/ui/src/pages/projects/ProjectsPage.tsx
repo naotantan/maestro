@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useQueryClient } from 'react-query';
 import { Link } from 'react-router-dom';
-import { useTranslation } from '@company/i18n';
+import { useTranslation } from '@maestro/i18n';
 import api from '../../lib/api.ts';
 import { formatDate } from '../../lib/date.ts';
 import { Alert, EmptyState, LoadingSpinner, Button, Card, CardBody } from '../../components/ui';

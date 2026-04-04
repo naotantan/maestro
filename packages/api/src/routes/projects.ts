@@ -1,5 +1,5 @@
 import { Router, type Router as RouterType } from 'express';
-import { getDb, projects, project_workspaces } from '@company/db';
+import { getDb, projects, project_workspaces } from '@maestro/db';
 import { eq, and, desc } from 'drizzle-orm';
 import { sanitizeString } from '../middleware/validate';
 

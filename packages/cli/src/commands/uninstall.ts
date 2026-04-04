@@ -8,7 +8,7 @@ export const uninstallCommand = new Command('uninstall')
   .description('CLI をアンインストール')
   .option('--force', '確認なしでアンインストール')
   .action(async (options: { force?: boolean }) => {
-    console.log(chalk.bold('\n🗑️  .company CLI アンインストール\n'));
+    console.log(chalk.bold('\n🗑️  .maestro CLI アンインストール\n'));
 
     if (!options.force) {
       const answer = await inquirer.prompt([
@@ -36,7 +36,7 @@ export const uninstallCommand = new Command('uninstall')
 
       console.log(chalk.green('\n✅ 設定をクリアしました'));
       console.log(chalk.gray('\nCLI をアンインストールするには、以下を実行してください:'));
-      console.log(chalk.cyan('  npm uninstall -g @company/cli'));
+      console.log(chalk.cyan('  npm uninstall -g @maestro/cli'));
       console.log('');
     } catch (error) {
       spinner.fail('アンインストール失敗');

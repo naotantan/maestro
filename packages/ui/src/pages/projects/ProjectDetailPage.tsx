@@ -1,6 +1,6 @@
 import { useParams } from 'react-router-dom';
 import { useQuery } from 'react-query';
-import { useTranslation } from '@company/i18n';
+import { useTranslation } from '@maestro/i18n';
 import api from '../../lib/api.ts';
 import { formatDate } from '../../lib/date.ts';
 import { Alert, LoadingSpinner } from '../../components/ui';

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Outlet, NavLink, useLocation } from 'react-router-dom';
-import { useTranslation } from '@company/i18n';
+import { useTranslation } from '@maestro/i18n';
 import { authStore } from '../stores/auth.ts';
 import { useNavigate } from 'react-router-dom';
 import { clsx } from 'clsx';
@@ -140,7 +140,7 @@ function SidebarContent({
           {t('layout.console')}
         </div>
         <div className="mt-4">
-          <h1 className="text-2xl font-semibold tracking-tight text-white">.company</h1>
+          <h1 className="text-2xl font-semibold tracking-tight text-white">.maestro</h1>
           <p className="mt-1 max-w-xs text-sm leading-6 text-slate-400">{t('layout.consoleDescription')}</p>
         </div>
       </div>
@@ -248,7 +248,7 @@ export default function Layout() {
                 <Menu className="h-5 w-5" />
               </button>
               <div className="text-center">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-sky-300">.company</p>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-sky-300">.maestro</p>
                 <p className="text-sm text-slate-400">{t('layout.console')}</p>
               </div>
               <button

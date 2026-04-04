@@ -1,7 +1,7 @@
 import { Router, type Router as RouterType } from 'express';
-import { getDb, companies } from '@company/db';
+import { getDb, companies } from '@maestro/db';
 import { eq } from 'drizzle-orm';
-import type { AgentType } from '@company/shared';
+import type { AgentType } from '@maestro/shared';
 import { isValidEmail } from '../middleware/validate';
 
 export const settingsRouter: RouterType = Router();

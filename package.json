@@ -1,15 +1,15 @@
 {
-  "name": "company-cli-monorepo",
+  "name": "maestro-monorepo",
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "dev": "pnpm --filter @company/api dev & pnpm --filter @company/ui dev",
+    "dev": "pnpm --filter @maestro/api dev & pnpm --filter @maestro/ui dev",
     "build": "pnpm -r build",
     "test": "pnpm -r test",
     "lint": "eslint .",
     "typecheck": "pnpm -r typecheck",
-    "db:generate": "pnpm --filter @company/db generate",
-    "db:migrate": "pnpm --filter @company/db migrate",
+    "db:generate": "pnpm --filter @maestro/db generate",
+    "db:migrate": "pnpm --filter @maestro/db migrate",
     "docker:up": "docker compose up -d",
     "docker:down": "docker compose down",
     "format": "prettier --write \"packages/*/src/**/*.ts\"",
@@ -38,10 +38,10 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/naotantan/company-cli"
+    "url": "https://github.com/naotantan/maestro"
   },
   "bugs": {
-    "url": "https://github.com/naotantan/company-cli/issues"
+    "url": "https://github.com/naotantan/maestro/issues"
   },
   "keywords": [
     "ai",

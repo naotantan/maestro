@@ -26,7 +26,7 @@ export const registerCommand = new Command('register')
     company?: string;
     quiet?: boolean;
   }) => {
-    console.log(chalk.bold('\n📝 .company アカウント登録\n'));
+    console.log(chalk.bold('\n📝 .maestro アカウント登録\n'));
 
     let email = options.email;
     let name = options.name;

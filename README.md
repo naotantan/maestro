@@ -1,6 +1,6 @@
-# company-cli
+# maestro
 
-[![CI](https://github.com/naotantan/company-cli/actions/workflows/ci.yml/badge.svg)](https://github.com/naotantan/company-cli/actions/workflows/ci.yml)
+[![CI](https://github.com/naotantan/maestro/actions/workflows/ci.yml/badge.svg)](https://github.com/naotantan/maestro/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 > **AIエージェントを「試すだけ」から「業務で使える」に変えるバックエンド基盤**
@@ -21,7 +21,7 @@
 
 ### 導入前・後の比較
 
-| 導入前の状況 | company-cli 導入後 |
+| 導入前の状況 | maestro 導入後 |
 |---|---|
 | AIが何をしているか分からない | 全操作をログで追跡できる |
 | API費用が月末まで分からない | 予算上限を超えたら自動停止 |
@@ -220,9 +220,9 @@ nvm install 20 && nvm use 20
 curl -fsSL https://get.pnpm.io/install.sh | sh -
 source ~/.bashrc  # または source ~/.zshrc
 
-# company-cli のセットアップ
-git clone https://github.com/naotantan/company-cli.git
-cd company-cli
+# maestro のセットアップ
+git clone https://github.com/naotantan/maestro.git
+cd maestro
 pnpm install                          # .env と packages/api/.env を自動生成
 # API_KEY_SALT と ENCRYPTION_KEY を任意の文字列に変更（セキュリティ上必須）
 nano .env
@@ -230,7 +230,7 @@ nano .env
 # データベース起動 → マイグレーション → APIサーバー起動
 docker compose up -d
 pnpm db:migrate
-pnpm --filter @company/api dev
+pnpm --filter @maestro/api dev
 ```
 
 **起動確認**: `curl http://localhost:3000/health` → `{"status":"ok"}` が返れば成功です。
@@ -247,22 +247,22 @@ nvm install 20 && nvm use 20
 curl -fsSL https://get.pnpm.io/install.sh | sh -
 source ~/.bashrc  # または source ~/.zshrc
 
-# company-cli のセットアップ
-git clone https://github.com/naotantan/company-cli.git
-cd company-cli
+# maestro のセットアップ
+git clone https://github.com/naotantan/maestro.git
+cd maestro
 pnpm install                          # .env と packages/api/.env を自動生成
 
 # PostgreSQL にデータベースとユーザーを作成
-sudo -u postgres psql -c "CREATE USER company WITH PASSWORD 'changeme';"
-sudo -u postgres psql -c "CREATE DATABASE company_dev OWNER company;"
-sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE company_dev TO company;"
+sudo -u postgres psql -c "CREATE USER maestro WITH PASSWORD 'changeme';"
+sudo -u postgres psql -c "CREATE DATABASE maestro_dev OWNER maestro;"
+sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE maestro_dev TO maestro;"
 
 # .env の DATABASE_URL・API_KEY_SALT・ENCRYPTION_KEY を編集
 nano .env
 
 # マイグレーション → APIサーバー起動
 pnpm db:migrate
-pnpm --filter @company/api dev
+pnpm --filter @maestro/api dev
 ```
 
 > **補足**: `.env` の `DATABASE_URL` は `localhost` ではなく `127.0.0.1` を使ってください。環境によっては `localhost` が IPv6（`::1`）に解決され接続できない場合があります。
@@ -378,7 +378,7 @@ curl -X POST http://localhost:3000/api/handoffs \
 
 | 変数名 | 説明 | デフォルト |
 |--------|------|---------|
-| `DATABASE_URL` | PostgreSQL接続URL | `postgresql://company:changeme@localhost:5432/company` |
+| `DATABASE_URL` | PostgreSQL接続URL | `postgresql://maestro:changeme@localhost:5432/maestro_dev` |
 | `PORT` | APIサーバーポート | `3000` |
 | `NODE_ENV` | 環境（development/production） | `development` |
 | `ENABLE_ENGINE` | Heartbeatエンジン有効化 | `false` |
@@ -391,7 +391,7 @@ curl -X POST http://localhost:3000/api/handoffs \
 
 ### お問い合わせ・導入相談
 
-技術的なご質問・導入検討のご相談は [GitHub Issues](https://github.com/naotantan/company-cli/issues) からお気軽にどうぞ。
+技術的なご質問・導入検討のご相談は [GitHub Issues](https://github.com/naotantan/maestro/issues) からお気軽にどうぞ。
 
 > **まずは5分で試せます**: `docker compose up -d && pnpm dev` でローカル環境が立ち上がります。
 > アカウント登録・申し込みは不要です。
@@ -402,7 +402,7 @@ curl -X POST http://localhost:3000/api/handoffs \
 
 ### In One Line
 
-**company-cli is a ready-to-deploy backend that lets you run AI agents safely, with budget controls and seamless integration into your existing tools.**
+**maestro is a ready-to-deploy backend that lets you run AI agents safely, with budget controls and seamless integration into your existing tools.**
 
 Non-technical stakeholders see real-time visibility into what AI is doing and how much it costs. Technical teams get a clean REST API and a working system in under a day.
 
@@ -410,7 +410,7 @@ Non-technical stakeholders see real-time visibility into what AI is doing and ho
 
 ### Before and After
 
-| Before | After company-cli |
+| Before | After maestro |
 |--------|-------------------|
 | No idea what AI agents are doing | Full activity log with timestamps |
 | API costs discovered at month-end | Auto-stop when budget limit is hit |
@@ -552,7 +552,7 @@ Select the agent type when registering an agent in the Web dashboard.
 No. Docker brings up the database with one command (`docker compose up -d`). The API server starts with one command (`pnpm dev`). If you can run a terminal, you can run this.
 
 **Q: Will it interfere with our existing systems?**
-No. company-cli is a standalone backend. It connects to your existing tools via REST API and Webhooks without touching or replacing anything you already have.
+No. maestro is a standalone backend. It connects to your existing tools via REST API and Webhooks without touching or replacing anything you already have.
 
 **Q: How is security handled?**
 Enterprise-grade security is built in by default — XSS prevention, SQL injection protection, rate limiting, AES-256-GCM encryption, and security headers. All dependencies have been audited for known vulnerabilities (see Security section below).
@@ -608,9 +608,9 @@ nvm install 20 && nvm use 20
 curl -fsSL https://get.pnpm.io/install.sh | sh -
 source ~/.bashrc   # or source ~/.zshrc on macOS
 
-# Set up company-cli
-git clone https://github.com/naotantan/company-cli.git
-cd company-cli
+# Set up maestro
+git clone https://github.com/naotantan/maestro.git
+cd maestro
 pnpm install                           # auto-generates .env and packages/api/.env
 # Set API_KEY_SALT and ENCRYPTION_KEY to any strings you choose (required for security)
 nano .env
@@ -618,7 +618,7 @@ nano .env
 # Start the database, run migrations, and start the API server
 docker compose up -d
 pnpm db:migrate
-pnpm --filter @company/api dev
+pnpm --filter @maestro/api dev
 ```
 
 **Verify**: `curl http://localhost:3000/health` should return `{"status":"ok"}`.
@@ -635,22 +635,22 @@ nvm install 20 && nvm use 20
 curl -fsSL https://get.pnpm.io/install.sh | sh -
 source ~/.bashrc   # or source ~/.zshrc on macOS
 
-# Set up company-cli
-git clone https://github.com/naotantan/company-cli.git
-cd company-cli
+# Set up maestro
+git clone https://github.com/naotantan/maestro.git
+cd maestro
 pnpm install                           # auto-generates .env and packages/api/.env
 
 # Create the database and user in PostgreSQL
-sudo -u postgres psql -c "CREATE USER company WITH PASSWORD 'changeme';"
-sudo -u postgres psql -c "CREATE DATABASE company_dev OWNER company;"
-sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE company_dev TO company;"
+sudo -u postgres psql -c "CREATE USER maestro WITH PASSWORD 'changeme';"
+sudo -u postgres psql -c "CREATE DATABASE maestro_dev OWNER maestro;"
+sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE maestro_dev TO maestro;"
 
 # Edit DATABASE_URL, API_KEY_SALT, and ENCRYPTION_KEY in .env
 nano .env
 
 # Run migrations and start the API server
 pnpm db:migrate
-pnpm --filter @company/api dev
+pnpm --filter @maestro/api dev
 ```
 
 > **Note**: Use `127.0.0.1` instead of `localhost` in `DATABASE_URL`. On some systems `localhost` resolves to IPv6 (`::1`) and the connection will fail.
@@ -769,7 +769,7 @@ Track the entire chain with `GET /api/handoffs?chain_id=<chain_id>`.
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `DATABASE_URL` | PostgreSQL connection string | `postgresql://company:changeme@localhost:5432/company` |
+| `DATABASE_URL` | PostgreSQL connection string | `postgresql://maestro:changeme@localhost:5432/maestro_dev` |
 | `PORT` | API server port | `3000` |
 | `NODE_ENV` | Environment (`development` / `production`) | `development` |
 | `ENABLE_ENGINE` | Enable heartbeat engine | `false` |
@@ -783,7 +783,7 @@ Track the entire chain with `GET /api/handoffs?chain_id=<chain_id>`.
 ### Project Structure
 
 ```
-company-cli/
+maestro/
 ├── packages/
 │   ├── shared/     # Shared types and utilities
 │   ├── db/         # Database schema and migrations
@@ -806,7 +806,7 @@ company-cli/
 
 ### Contact & Enterprise Inquiries
 
-For enterprise inquiries, integration questions, or technical support, open an issue on [GitHub](https://github.com/naotantan/company-cli/issues).
+For enterprise inquiries, integration questions, or technical support, open an issue on [GitHub](https://github.com/naotantan/maestro/issues).
 
 > **Try it in 5 minutes**: `docker compose up -d && pnpm dev` starts a fully working local environment.
 > No account, sign-up, or credit card required.

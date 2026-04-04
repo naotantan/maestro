@@ -9,7 +9,7 @@ export { OpenclawGatewayAdapter } from './openclaw-gateway.js';
 export { OpencodeLocalAdapter } from './opencode-local.js';
 export { PiLocalAdapter } from './pi-local.js';
 
-import type { AgentType } from '@company/shared';
+import type { AgentType } from '@maestro/shared';
 import type { AdapterConfig } from './base.js';
 import type { BaseAdapter } from './base.js';
 import { ClaudeLocalAdapter } from './claude-local.js';

@@ -1,4 +1,4 @@
-import { useTranslation } from '@company/i18n';
+import { useTranslation } from '@maestro/i18n';
 
 interface LoadingSpinnerProps {
   text?: string;

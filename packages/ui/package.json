@@ -1,5 +1,5 @@
 {
-  "name": "@company/ui",
+  "name": "@maestro/ui",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -10,8 +10,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@company/i18n": "workspace:*",
-    "@company/shared": "workspace:*",
+    "@maestro/i18n": "workspace:*",
+    "@maestro/shared": "workspace:*",
     "axios": "^1.6.0",
     "clsx": "^2.1.0",
     "date-fns": "^3.3.0",
@@ -37,7 +37,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/naotantan/company-cli",
+    "url": "https://github.com/naotantan/maestro",
     "directory": "packages/ui"
   }
 }

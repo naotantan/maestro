@@ -1,6 +1,6 @@
 openapi: 3.0.3
 info:
-  title: company-cli API
+  title: maestro API
   version: 0.1.0
   description: Multi-tenant AI agent management backend
 

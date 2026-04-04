@@ -1,10 +1,10 @@
 import { Router, type Router as RouterType } from 'express';
 import bcrypt from 'bcryptjs';
 import { v4 as uuidv4 } from 'uuid';
-import { getDb, users, company_memberships, companies, board_api_keys } from '@company/db';
+import { getDb, users, company_memberships, companies, board_api_keys } from '@maestro/db';
 import { eq } from 'drizzle-orm';
 import { generateApiKey } from '../utils/crypto';
-import { API_KEY_PREFIXES } from '@company/shared';
+import { API_KEY_PREFIXES } from '@maestro/shared';
 import { isValidEmail, isStrongPassword, sanitizeString } from '../middleware/validate';
 import { auditLog } from '../middleware/audit';
 

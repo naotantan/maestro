@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useQueryClient } from 'react-query';
-import { useTranslation } from '@company/i18n';
+import { useTranslation } from '@maestro/i18n';
 import api from '../../lib/api.ts';
 import { Alert, EmptyState, LoadingSpinner } from '../../components/ui';
 

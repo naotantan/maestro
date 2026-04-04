@@ -5,7 +5,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import request from 'supertest';
 import { createApp } from '../server.js';
-import { getDb } from '@company/db';
+import { getDb } from '@maestro/db';
 
 vi.mock('../middleware/auth.js', () => ({
   authMiddleware: (req: { companyId?: string }, _res: unknown, next: () => void) => {
@@ -18,8 +18,8 @@ vi.mock('../middleware/activity-logger.js', () => ({
   activityLogger: (_req: unknown, _res: unknown, next: () => void) => next(),
 }));
 
-// @company/adapters の dynamic import をモック
-vi.mock('@company/adapters', () => ({
+// @maestro/adapters の dynamic import をモック
+vi.mock('@maestro/adapters', () => ({
   createAdapter: vi.fn(() => ({
     runTask: vi.fn().mockResolvedValue({
       taskId: 'task-001',
@@ -132,7 +132,7 @@ describe('POST /api/tasks', () => {
 
   // UT-06: アダプター実行失敗
   it('UT-06: アダプターがerrorを返すとfinish_reason=error', async () => {
-    const { createAdapter } = await import('@company/adapters');
+    const { createAdapter } = await import('@maestro/adapters');
     vi.mocked(createAdapter).mockReturnValueOnce({
       runTask: vi.fn().mockResolvedValue({
         taskId: 'task-001',

@@ -1,11 +1,11 @@
 import { Router, type Router as RouterType } from 'express';
-import { getDb, agents, agent_task_sessions } from '@company/db';
+import { getDb, agents, agent_task_sessions } from '@maestro/db';
 import { eq, and, inArray } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
 import { sanitizeString, sanitizePagination } from '../middleware/validate';
-import type { AgentType } from '@company/shared';
+import type { AgentType } from '@maestro/shared';
 
-// @company/adapters は ESM のため dynamic import
+// @maestro/adapters は ESM のため dynamic import
 // AdapterConfig は packages/adapters/src/base.ts と同一形状
 type AdapterConfig = { apiKey?: string; baseUrl?: string; model?: string; timeout?: number };
 
@@ -59,7 +59,7 @@ tasksRouter.post('/', async (req, res, next) => {
 
     try {
       // アダプター経由でタスク実行
-      const { createAdapter } = await import('@company/adapters');
+      const { createAdapter } = await import('@maestro/adapters');
       const adapter = createAdapter(agent.type as AgentType, (agent.config as AdapterConfig) ?? {});
       const response = await adapter.runTask({
         taskId,

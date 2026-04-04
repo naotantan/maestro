@@ -11,9 +11,9 @@ interface CheckResult {
 }
 
 export const doctorCommand = new Command('doctor')
-  .description('環境診断: .company CLI の動作に必要な環境を確認します')
+  .description('環境診断: .maestro CLI の動作に必要な環境を確認します')
   .action(async () => {
-    console.log(chalk.bold('\n🩺 .company CLI 環境診断\n'));
+    console.log(chalk.bold('\n🩺 .maestro CLI 環境診断\n'));
     const results: CheckResult[] = [];
 
     // 1. Node.js バージョン確認
@@ -93,7 +93,7 @@ function checkDockerRunning(): CheckResult {
       name: 'Docker Desktop',
       status: 'warn',
       message: '停止中',
-      hint: 'Docker Desktop を起動してください（company init --docker に必要）',
+      hint: 'Docker Desktop を起動してください（maestro init --docker に必要）',
     };
   }
 }
@@ -105,7 +105,7 @@ function checkConfig(): CheckResult {
       name: '設定ファイル',
       status: 'warn',
       message: '未設定',
-      hint: 'company init を実行してください',
+      hint: 'maestro init を実行してください',
     };
   }
   return {
@@ -122,7 +122,7 @@ async function checkDatabase(): Promise<CheckResult> {
       name: 'データベース',
       status: 'warn',
       message: '設定未完了',
-      hint: 'company init を先に実行してください',
+      hint: 'maestro init を先に実行してください',
     };
   }
 
@@ -144,7 +144,7 @@ async function checkDatabase(): Promise<CheckResult> {
       message: 'API サーバーに接続できません',
       hint: config.installMode === 'docker'
         ? 'docker compose up -d を実行してください'
-        : 'company api start を実行してください',
+        : 'maestro api start を実行してください',
     };
   }
 }

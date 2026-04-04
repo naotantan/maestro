@@ -1,6 +1,6 @@
 import Conf from 'conf';
-import type { CliConfig } from '@company/shared';
-import { CLI_CONFIG_DIR } from '@company/shared';
+import type { CliConfig } from '@maestro/shared';
+import { CLI_CONFIG_DIR } from '@maestro/shared';
 
 const store = new Conf<CliConfig>({
   projectName: CLI_CONFIG_DIR,

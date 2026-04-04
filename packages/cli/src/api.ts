@@ -1,6 +1,6 @@
 import fetch from 'node-fetch';
 import { getApiUrl } from './config.js';
-import type { CliConfig } from '@company/shared';
+import type { CliConfig } from '@maestro/shared';
 
 export interface ApiErrorResponse {
   error: string;
@@ -36,7 +36,7 @@ export async function apiRequest<T>(
 
 export function checkAuth(config: CliConfig | null): string {
   if (!config?.apiKey) {
-    console.error('認証が必要です。先に company login を実行してください。');
+    console.error('認証が必要です。先に maestro login を実行してください。');
     process.exit(1);
   }
   return config.apiKey;

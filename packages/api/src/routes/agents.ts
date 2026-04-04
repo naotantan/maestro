@@ -1,8 +1,8 @@
 import { Router, type Router as RouterType } from 'express';
-import { getDb, agents, heartbeat_runs, agent_api_keys } from '@company/db';
+import { getDb, agents, heartbeat_runs, agent_api_keys } from '@maestro/db';
 import { eq, and, desc } from 'drizzle-orm';
 import { generateApiKey, encrypt } from '../utils/crypto';
-import { API_KEY_PREFIXES, type AgentType } from '@company/shared';
+import { API_KEY_PREFIXES, type AgentType } from '@maestro/shared';
 import { sanitizeString } from '../middleware/validate';
 
 // 有効なエージェントタイプ一覧（AgentType ユニオンを配列で保持）

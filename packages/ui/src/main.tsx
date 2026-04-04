@@ -1,7 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from 'react-query';
-import '@company/i18n'; // i18n初期化（副作用インポート）
+import '@maestro/i18n'; // i18n初期化（副作用インポート）
 import App from './App.tsx';
 import './index.css';
 

@@ -5,7 +5,7 @@
  * - 再起動回数を追跡して無限ループを防止する
  */
 
-import { getDb, agents, agent_runtime_state, heartbeat_run_events } from '@company/db';
+import { getDb, agents, agent_runtime_state, heartbeat_run_events } from '@maestro/db';
 import { eq, and } from 'drizzle-orm';
 
 // クラッシュ回復チェック間隔（デフォルト60秒）

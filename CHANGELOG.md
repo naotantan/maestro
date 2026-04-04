@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Multi-adapter support: Claude, GPT-4, Gemini, OpenCode
 - AI agent management with heartbeat monitoring (30s interval)
 - Budget monitoring with auto-stop and alert thresholds
-- Multi-tenant architecture with strict company isolation
+- Multi-tenant architecture with strict maestro isolation
 - Project and goal management with workspace support
 - Issue tracker with priority, status, and label support
 - Approval workflow for agent tasks

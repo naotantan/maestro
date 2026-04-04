@@ -3,33 +3,33 @@ version: '3.9'
 services:
   postgres:
     image: postgres:17-alpine
-    container_name: company-postgres
+    container_name: maestro-postgres
     environment:
-      POSTGRES_USER: company
+      POSTGRES_USER: maestro
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
-      POSTGRES_DB: company
+      POSTGRES_DB: maestro
     ports:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U company -d company"]
+      test: ["CMD-SHELL", "pg_isready -U maestro -d maestro"]
       interval: 5s
       timeout: 10s
       retries: 5
     networks:
-      - company-network
+      - maestro-network
 
   api:
     build:
       context: .
       dockerfile: packages/api/Dockerfile
-    container_name: company-api
+    container_name: maestro-api
     depends_on:
       postgres:
         condition: service_healthy
     environment:
-      DATABASE_URL: postgresql://company:${POSTGRES_PASSWORD:-changeme}@postgres:5432/company
+      DATABASE_URL: postgresql://maestro:${POSTGRES_PASSWORD:-changeme}@postgres:5432/maestro
       ENABLE_ENGINE: "false"
       NODE_ENV: ${NODE_ENV:-production}
       PORT: 3000
@@ -38,7 +38,7 @@ services:
     ports:
       - "3000:3000"
     networks:
-      - company-network
+      - maestro-network
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:3000/health || exit 1"]
       interval: 10s
@@ -49,5 +49,5 @@ volumes:
   pgdata:
 
 networks:
-  company-network:
+  maestro-network:
     driver: bridge

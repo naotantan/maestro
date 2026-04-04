@@ -1,5 +1,5 @@
 import type { Request, Response, NextFunction } from 'express';
-import { getDb, activity_log } from '@company/db';
+import { getDb, activity_log } from '@maestro/db';
 
 // パスからエンティティ種別を抽出する
 // app.use('/api', ...) でマウントされるため req.path は /agents 形式（/api/ プレフィックスなし）

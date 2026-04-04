@@ -11,6 +11,6 @@ export default {
   out: './drizzle',
   driver: 'pg',
   dbCredentials: {
-    connectionString: process.env.DATABASE_URL || 'postgresql://company:changeme@localhost:5432/company',
+    connectionString: process.env.DATABASE_URL || 'postgresql://maestro:changeme@localhost:5432/maestro',
   },
 } satisfies Config;

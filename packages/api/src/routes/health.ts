@@ -1,5 +1,5 @@
 import { Router, type Router as RouterType } from 'express';
-import { getDb } from '@company/db';
+import { getDb } from '@maestro/db';
 import { sql } from 'drizzle-orm';
 
 export const healthRouter: RouterType = Router();

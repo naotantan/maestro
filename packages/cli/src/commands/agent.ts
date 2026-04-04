@@ -4,8 +4,8 @@ import ora from 'ora';
 import inquirer from 'inquirer';
 import { getConfig } from '../config.js';
 import { apiRequest, checkAuth } from '../api.js';
-import type { Agent, AgentType } from '@company/shared';
-import { AGENT_TYPES } from '@company/shared';
+import type { Agent, AgentType } from '@maestro/shared';
+import { AGENT_TYPES } from '@maestro/shared';
 
 interface AgentListResponse {
   agents: Agent[];

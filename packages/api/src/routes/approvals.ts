@@ -1,5 +1,5 @@
 import { Router, type Router as RouterType } from 'express';
-import { getDb, approvals, issues } from '@company/db';
+import { getDb, approvals, issues } from '@maestro/db';
 import { eq, desc, and } from 'drizzle-orm';
 
 export const approvalsRouter: RouterType = Router();

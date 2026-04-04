@@ -21,8 +21,8 @@ import { uninstallCommand } from './commands/uninstall.js';
 const program = new Command();
 
 program
-  .name('company')
-  .description('.company CLI — AIエージェント組織管理ツール')
+  .name('maestro')
+  .description('.maestro CLI — AIエージェント組織管理ツール')
   .version('0.1.0');
 
 // サブコマンド登録

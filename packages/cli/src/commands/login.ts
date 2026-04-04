@@ -27,7 +27,7 @@ export const loginCommand = new Command('login')
     email?: string;
     quiet?: boolean;
   }) => {
-    console.log(chalk.bold('\n🔑 .company ログイン\n'));
+    console.log(chalk.bold('\n🔑 .maestro ログイン\n'));
 
     let email = options.email;
     let password: string;

@@ -1,7 +1,7 @@
 import { vi } from 'vitest';
 
 // DB をモック（統合テストはDB不要）
-vi.mock('@company/db', () => ({
+vi.mock('@maestro/db', () => ({
   getDb: vi.fn(() => ({
     select: vi.fn().mockReturnThis(),
     from: vi.fn().mockReturnThis(),

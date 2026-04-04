@@ -1,7 +1,7 @@
 import path from 'path';
 import dotenv from 'dotenv';
 import { createApp } from './server';
-import { closeDb } from '@company/db';
+import { closeDb } from '@maestro/db';
 import { startHeartbeatEngine, stopHeartbeatEngine } from './engine/heartbeat-engine';
 import { startCrashRecovery, stopCrashRecovery } from './engine/crash-recovery';
 import { startBudgetMonitor, stopBudgetMonitor } from './engine/budget-monitor';
