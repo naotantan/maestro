@@ -52,12 +52,13 @@ artifactsRouter.get('/', async (req, res, next) => {
 // }
 artifactsRouter.post('/', async (req, res, next) => {
   try {
-    const { session_id, type, title, description, prompt, url, file_path, tags, meta } = req.body as {
+    const { session_id, type, title, description, prompt, content, url, file_path, tags, meta } = req.body as {
       session_id?: string;
       type?: string;
       title?: string;
       description?: string;
       prompt?: string;
+      content?: string;
       url?: string;
       file_path?: string;
       tags?: string[];
@@ -97,6 +98,7 @@ artifactsRouter.post('/', async (req, res, next) => {
       title: sanitizeString(title.trim()).slice(0, 500),
       description: description ? sanitizeString(description.trim()) : null,
       prompt: prompt ? sanitizeString(prompt.trim()) : null,
+      content: content ?? null,
       url: url ?? null,
       file_path: file_path ?? null,
       tags: Array.isArray(tags) ? tags.map(t => sanitizeString(t)) : null,
@@ -132,10 +134,11 @@ artifactsRouter.get('/:id', async (req, res, next) => {
 // PATCH /api/artifacts/:id — 更新
 artifactsRouter.patch('/:id', async (req, res, next) => {
   try {
-    const { title, description, prompt, tags, meta } = req.body as {
+    const { title, description, prompt, content, tags, meta } = req.body as {
       title?: string;
       description?: string;
       prompt?: string;
+      content?: string;
       tags?: string[];
       meta?: Record<string, unknown>;
     };
@@ -145,6 +148,7 @@ artifactsRouter.patch('/:id', async (req, res, next) => {
     if (title !== undefined) fields.title = sanitizeString(title.trim()).slice(0, 500);
     if (description !== undefined) fields.description = description ? sanitizeString(description.trim()) : null;
     if (prompt !== undefined) fields.prompt = prompt ? sanitizeString(prompt.trim()) : null;
+    if (content !== undefined) fields.content = content ?? null;
     if (tags !== undefined) fields.tags = Array.isArray(tags) ? tags.map(t => sanitizeString(t)) : null;
     if (meta !== undefined) fields.meta = meta;
 

@@ -32,7 +32,7 @@ RUN pnpm --filter @maestro/api build
 
 # 本番イメージ
 FROM node:20-alpine
-RUN apk add --no-cache git postgresql-client
+RUN apk add --no-cache git postgresql-client curl
 WORKDIR /app
 
 # ビルダーのモノレポnode_modulesをそのままコピー（pnpmのリンク構造を保持）

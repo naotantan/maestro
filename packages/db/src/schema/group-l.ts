@@ -10,6 +10,7 @@ export const artifacts = pgTable('artifacts', {
   title: varchar('title', { length: 500 }).notNull(),
   description: text('description'),    // 成果物の概要・説明
   prompt: text('prompt'),              // 作成のきっかけとなった指示・依頼文
+  content: text('content'),            // レポート・調査結果などの本文（Markdown可）
   url: text('url'),                    // Webアーティファクト (localhost:8888/xxx など)
   file_path: text('file_path'),        // ファイルアーティファクト
   tags: text('tags').array(),

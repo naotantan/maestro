@@ -5,7 +5,7 @@ import { formatDate } from '../../lib/date.ts';
 import { LoadingSpinner, Alert, EmptyState } from '../../components/ui';
 import {
   Link2, FileText, Image, FileBarChart, Package, ExternalLink,
-  Trash2, Clock, Terminal, Tag, Search, Filter,
+  Trash2, Clock, Terminal, Tag, Search, Filter, BookOpen,
 } from 'lucide-react';
 import { clsx } from 'clsx';
 
@@ -17,6 +17,7 @@ interface Artifact {
   title: string;
   description: string | null;
   prompt: string | null;
+  content: string | null;
   url: string | null;
   file_path: string | null;
   tags: string[] | null;
@@ -60,6 +61,7 @@ function TypeBadge({ type }: { type: string }) {
 
 function ArtifactCard({ artifact, onDelete }: { artifact: Artifact; onDelete: (id: string) => void }) {
   const [expanded, setExpanded] = useState(false);
+  const [showContent, setShowContent] = useState(false);
   const link = artifact.url ?? artifact.file_path;
 
   return (
@@ -128,6 +130,15 @@ function ArtifactCard({ artifact, onDelete }: { artifact: Artifact; onDelete: (i
 
           {/* Actions */}
           <div className="flex items-center gap-1 flex-shrink-0">
+            {artifact.content && (
+              <button
+                onClick={() => setShowContent(!showContent)}
+                className={`p-1.5 rounded-th-sm transition-colors ${showContent ? 'text-th-accent bg-th-accent-dim' : 'text-th-text-4 hover:text-th-text hover:bg-th-surface-2'}`}
+                title="本文を表示"
+              >
+                <BookOpen className="h-4 w-4" />
+              </button>
+            )}
             {artifact.prompt && (
               <button
                 onClick={() => setExpanded(!expanded)}
@@ -147,6 +158,19 @@ function ArtifactCard({ artifact, onDelete }: { artifact: Artifact; onDelete: (i
           </div>
         </div>
       </div>
+
+      {/* Expanded: content (report body) */}
+      {showContent && artifact.content && (
+        <div className="border-t border-th-border bg-th-surface-0 px-5 py-4">
+          <p className="text-xs font-semibold text-th-text-4 uppercase tracking-wider mb-3 flex items-center gap-1">
+            <BookOpen className="h-3 w-3" />
+            本文
+          </p>
+          <pre className="text-sm text-th-text-2 whitespace-pre-wrap break-words font-sans leading-relaxed bg-th-surface-1 rounded-th-sm p-4 overflow-y-auto max-h-[600px]">
+            {artifact.content}
+          </pre>
+        </div>
+      )}
 
       {/* Expanded: prompt */}
       {expanded && artifact.prompt && (

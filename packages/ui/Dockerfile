@@ -4,13 +4,14 @@ WORKDIR /app
 RUN npm install -g pnpm
 
 # 依存関係コピー
-COPY package.json pnpm-lock.yaml* pnpm-workspace.yaml ./
+COPY package.json pnpm-lock.yaml* pnpm-workspace.yaml .env.example* ./
+COPY scripts ./scripts
 COPY packages/shared/package.json ./packages/shared/
 COPY packages/db/package.json ./packages/db/
 COPY packages/i18n/package.json ./packages/i18n/
 COPY packages/ui/package.json ./packages/ui/
 
-RUN pnpm install --frozen-lockfile
+RUN mkdir -p packages/api && pnpm install --frozen-lockfile
 
 # ソースコードコピー
 COPY packages/shared ./packages/shared
