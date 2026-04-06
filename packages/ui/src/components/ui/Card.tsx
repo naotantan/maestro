@@ -4,48 +4,43 @@ interface CardProps {
   children: React.ReactNode;
   className?: string;
   hoverable?: boolean;
+  selected?: boolean;
+  onClick?: () => void;
 }
 
-export function Card({ children, className, hoverable = false }: CardProps) {
+export function Card({ children, className, hoverable, selected, onClick }: CardProps) {
   return (
     <div
       className={clsx(
-        'bg-slate-800 rounded-xl border border-slate-700 transition-all duration-200',
-        hoverable && 'hover:border-sky-500 hover:shadow-lg hover:shadow-sky-500/10',
+        'bg-[#faf9f5] border border-[#f0eee6] rounded-th',
+        'shadow-[rgba(0,0,0,0.05)_0px_4px_24px]',
+        'transition-all duration-150',
+        hoverable && 'cursor-pointer hover:shadow-[rgba(0,0,0,0.08)_0px_8px_32px] hover:border-[#e8e6dc] hover:-translate-y-px',
+        selected && 'border-[#c96442] shadow-[0px_0px_0px_1px_rgba(201,100,66,0.3)]',
         className
       )}
+      onClick={onClick}
     >
       {children}
     </div>
   );
 }
 
-interface CardHeaderProps {
-  children: React.ReactNode;
-  className?: string;
-}
-
-export function CardHeader({ children, className }: CardHeaderProps) {
-  return <div className={clsx('px-5 py-4 border-b border-slate-700', className)}>{children}</div>;
-}
-
-interface CardBodyProps {
-  children: React.ReactNode;
-  className?: string;
-}
-
-export function CardBody({ children, className }: CardBodyProps) {
-  return <div className={clsx('px-5 py-4', className)}>{children}</div>;
-}
-
-interface CardFooterProps {
-  children: React.ReactNode;
-  className?: string;
-}
-
-export function CardFooter({ children, className }: CardFooterProps) {
+export function CardHeader({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
-    <div className={clsx('px-5 py-4 border-t border-slate-700 bg-slate-800/50', className)}>
+    <div className={clsx('px-5 pt-4 pb-3 border-b border-th-border', className)}>
+      {children}
+    </div>
+  );
+}
+
+export function CardBody({ children, className }: { children: React.ReactNode; className?: string }) {
+  return <div className={clsx('p-5', className)}>{children}</div>;
+}
+
+export function CardFooter({ children, className }: { children: React.ReactNode; className?: string }) {
+  return (
+    <div className={clsx('px-5 py-3 border-t border-th-border bg-[#f0eee6] rounded-b-th', className)}>
       {children}
     </div>
   );

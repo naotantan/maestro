@@ -17,6 +17,8 @@ export const issues = pgTable('issues', {
   priority: integer('priority').default(1),
   assigned_to: uuid('assigned_to'),
   created_by: uuid('created_by'),
+  plane_issue_id: varchar('plane_issue_id', { length: 255 }),
+  plane_issue_url: text('plane_issue_url'),
   created_at: timestamp('created_at').defaultNow(),
   updated_at: timestamp('updated_at').defaultNow(),
   completed_at: timestamp('completed_at'),

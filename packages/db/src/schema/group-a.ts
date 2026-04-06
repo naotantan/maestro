@@ -20,6 +20,10 @@ export const companies = pgTable('companies', {
   settings: json('settings').$type<{
     defaultAgentType?: string;
     anthropicApiKey?: string;
+    language?: string;
+    backup?: Record<string, unknown>;
+    plane?: Record<string, string>;
+    autoApprove?: boolean;
   }>().default({}),
   created_at: timestamp('created_at').defaultNow(),
   updated_at: timestamp('updated_at').defaultNow(),

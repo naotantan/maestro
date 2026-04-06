@@ -6,10 +6,13 @@ RUN npm install -g pnpm
 
 # 依存関係コピー
 COPY package.json pnpm-lock.yaml* pnpm-workspace.yaml ./
+COPY scripts/ ./scripts/
+COPY .env.example ./.env.example
 COPY packages/shared/package.json ./packages/shared/
 COPY packages/adapters/package.json ./packages/adapters/
 COPY packages/db/package.json ./packages/db/
 COPY packages/api/package.json ./packages/api/
+COPY packages/ui/package.json ./packages/ui/
 
 # 依存インストール
 RUN pnpm install --frozen-lockfile
@@ -29,6 +32,7 @@ RUN pnpm --filter @maestro/api build
 
 # 本番イメージ
 FROM node:20-alpine
+RUN apk add --no-cache git postgresql-client
 WORKDIR /app
 
 # ビルダーのモノレポnode_modulesをそのままコピー（pnpmのリンク構造を保持）

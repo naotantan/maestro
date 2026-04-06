@@ -1,38 +1,31 @@
 import { Router, type Router as RouterType } from 'express';
-import { getDb, issues, issue_comments, issue_goals, agents, goals, projects, agent_handoffs } from '@maestro/db';
+import { getDb, issues, issue_comments, issue_goals, agents, goals, projects, agent_handoffs, companies, company_memberships, users } from '@maestro/db';
 import { eq, and, sql, desc, inArray } from 'drizzle-orm';
 import { sanitizeString, sanitizePagination } from '../middleware/validate';
+import { findOwnedIssue, findOwnedGoal, findOwnedAgent } from '../utils/ownership';
+import { PlaneClient, getPlaneConfig, type PlaneState } from '../services/plane.js';
+
+async function getPlaneClient(companyId: string): Promise<PlaneClient | null> {
+  const db = getDb();
+  const rows = await db.select({ settings: companies.settings }).from(companies)
+    .where(eq(companies.id, companyId)).limit(1);
+  const config = getPlaneConfig((rows[0]?.settings ?? {}) as Record<string, unknown>);
+  return config ? new PlaneClient(config) : null;
+}
+
+// Issue status → Plane state group マッピング
+const ISSUE_STATUS_TO_PLANE_GROUP: Record<string, string> = {
+  backlog: 'backlog',
+  todo: 'unstarted',
+  in_progress: 'started',
+  in_review: 'started',
+  done: 'completed',
+  cancelled: 'cancelled',
+};
 
 const VALID_ISSUE_STATUSES = ['backlog', 'todo', 'in_progress', 'in_review', 'done', 'cancelled'] as const;
 
 export const issuesRouter: RouterType = Router();
-
-async function findOwnedIssue(db: ReturnType<typeof getDb>, companyId: string, issueId: string) {
-  const rows = await db
-    .select({ id: issues.id })
-    .from(issues)
-    .where(and(eq(issues.id, issueId), eq(issues.company_id, companyId)))
-    .limit(1);
-  return rows[0] ?? null;
-}
-
-async function findOwnedGoal(db: ReturnType<typeof getDb>, companyId: string, goalId: string) {
-  const rows = await db
-    .select({ id: goals.id })
-    .from(goals)
-    .where(and(eq(goals.id, goalId), eq(goals.company_id, companyId)))
-    .limit(1);
-  return rows[0] ?? null;
-}
-
-async function findOwnedAgent(db: ReturnType<typeof getDb>, companyId: string, agentId: string) {
-  const rows = await db
-    .select({ id: agents.id })
-    .from(agents)
-    .where(and(eq(agents.id, agentId), eq(agents.company_id, companyId)))
-    .limit(1);
-  return rows[0] ?? null;
-}
 
 // GET /api/issues（project_nameをJOINで付与）
 issuesRouter.get('/', async (req, res, next) => {
@@ -55,6 +48,8 @@ issuesRouter.get('/', async (req, res, next) => {
         created_at: issues.created_at,
         updated_at: issues.updated_at,
         completed_at: issues.completed_at,
+        plane_issue_id: issues.plane_issue_id,
+        plane_issue_url: issues.plane_issue_url,
       })
       .from(issues)
       .leftJoin(projects, eq(issues.project_id, projects.id))
@@ -134,20 +129,34 @@ issuesRouter.post('/', async (req, res, next) => {
 
     // トランザクション内で identifier を採番（race condition 防止）
     const newIssue = await db.transaction(async (tx) => {
-      // 現在の最大 identifier を取得
+      // プロジェクトのプレフィックスを取得
+      let prefix = 'TODO';
+      if (project_id) {
+        const projRow = await tx
+          .select({ prefix: projects.prefix })
+          .from(projects)
+          .where(eq(projects.id, project_id))
+          .limit(1);
+        if (projRow[0]?.prefix) prefix = projRow[0].prefix;
+      }
+
+      // プロジェクト内の最大番号を取得
       const maxResult = await tx
         .select({ max_id: sql<string | null>`max(identifier)` })
         .from(issues)
-        .where(eq(issues.company_id, req.companyId!));
+        .where(
+          project_id
+            ? eq(issues.project_id, project_id)
+            : eq(issues.company_id, req.companyId!)
+        );
 
       const maxIdentifier = maxResult[0]?.max_id;
       let nextNum = 1;
       if (maxIdentifier) {
-        // "COMP-001" → 1 を取り出してインクリメント
         const match = maxIdentifier.match(/(\d+)$/);
         if (match) nextNum = parseInt(match[1], 10) + 1;
       }
-      const identifier = `COMP-${String(nextNum).padStart(3, '0')}`;
+      const identifier = `${prefix}-${String(nextNum).padStart(3, '0')}`;
 
       // トランザクション内で insert を実行
       return tx
@@ -165,7 +174,28 @@ issuesRouter.post('/', async (req, res, next) => {
         })
         .returning();
     });
-    res.status(201).json({ data: newIssue[0] });
+    const issue = newIssue[0];
+
+    // Plane Issue を自動作成
+    const plane = await getPlaneClient(req.companyId!).catch(() => null);
+    if (plane) {
+      try {
+        const pi = await plane.createIssue(
+          `[${issue.identifier}] ${sanitizedTitle}`,
+          sanitizedDescription,
+        );
+        const issueUrl = plane.buildIssueUrl(pi.sequence_id);
+        await db.update(issues)
+          .set({ plane_issue_id: pi.id, plane_issue_url: issueUrl })
+          .where(eq(issues.id, issue.id));
+        issue.plane_issue_id = pi.id;
+        (issue as Record<string, unknown>).plane_issue_url = issueUrl;
+      } catch (e) {
+        console.error('[Plane] Issue作成失敗:', e);
+      }
+    }
+
+    res.status(201).json({ data: issue });
   } catch (err) {
     next(err);
   }
@@ -283,29 +313,55 @@ issuesRouter.patch('/:issueId', async (req, res, next) => {
         .from(issue_goals)
         .where(eq(issue_goals.issue_id, req.params.issueId));
 
-      for (const { goal_id } of linkedGoals) {
+      const goalIds = linkedGoals.map(g => g.goal_id);
+      if (goalIds.length > 0) {
+        // 全ゴールに紐付く issue_goals を一括取得（N+1 回避）
         const allLinks = await db
-          .select({ issue_id: issue_goals.issue_id })
+          .select({ goal_id: issue_goals.goal_id, issue_id: issue_goals.issue_id })
           .from(issue_goals)
-          .where(eq(issue_goals.goal_id, goal_id));
+          .where(inArray(issue_goals.goal_id, goalIds));
 
-        const issueIds = allLinks.map(l => l.issue_id);
-        let progress = 0;
-        if (issueIds.length > 0) {
-          const [result] = await db
-            .select({ count: sql<number>`count(*)` })
-            .from(issues)
-            .where(and(inArray(issues.id, issueIds), eq(issues.status, 'done')));
-          progress = Math.round((Number(result?.count ?? 0) / issueIds.length) * 100);
+        // 関連する全 issue の status を一括取得
+        const allIssueIds = [...new Set(allLinks.map(l => l.issue_id))];
+        const issueStatuses = allIssueIds.length > 0
+          ? await db
+              .select({ id: issues.id, status: issues.status })
+              .from(issues)
+              .where(inArray(issues.id, allIssueIds))
+          : [];
+        const statusMap = new Map(issueStatuses.map(i => [i.id, i.status]));
+
+        // ゴールごとに進捗を計算してバッチ更新
+        const now = new Date();
+        for (const goalId of goalIds) {
+          const goalLinks = allLinks.filter(l => l.goal_id === goalId);
+          const total = goalLinks.length;
+          const doneCount = goalLinks.filter(l => statusMap.get(l.issue_id) === 'done').length;
+          const progress = total > 0 ? Math.round((doneCount / total) * 100) : 0;
+          await db
+            .update(goals)
+            .set({ progress, updated_at: now })
+            .where(eq(goals.id, goalId));
         }
-        await db
-          .update(goals)
-          .set({ progress, updated_at: new Date() })
-          .where(eq(goals.id, goal_id));
       }
     }
 
-    res.json({ data: updated[0] });
+    const updatedIssue = updated[0];
+
+    // ステータス変更を Plane に同期
+    if (status && updatedIssue.plane_issue_id) {
+      const plane = await getPlaneClient(req.companyId!).catch(() => null);
+      if (plane) {
+        const planeGroup = ISSUE_STATUS_TO_PLANE_GROUP[status];
+        if (planeGroup) {
+          plane.updateIssueStateByGroup(updatedIssue.plane_issue_id, planeGroup as PlaneState['group']).catch((e) => {
+            console.error('[Plane] Issue状態同期失敗:', e);
+          });
+        }
+      }
+    }
+
+    res.json({ data: updatedIssue });
   } catch (err) {
     next(err);
   }
@@ -332,18 +388,26 @@ issuesRouter.delete('/:issueId', async (req, res, next) => {
 // GET /api/issues/:issueId/comments
 issuesRouter.get('/:issueId/comments', async (req, res, next) => {
   try {
+    const { limit, offset } = sanitizePagination(req.query.limit ?? '50', req.query.offset);
     const db = getDb();
     const issue = await findOwnedIssue(db, req.companyId!, req.params.issueId);
     if (!issue) {
       res.status(404).json({ error: 'not_found', message: 'Issueが見つかりません' });
       return;
     }
+    const [countResult] = await db
+      .select({ total: sql<number>`count(*)` })
+      .from(issue_comments)
+      .where(eq(issue_comments.issue_id, req.params.issueId));
+    const total = Number(countResult?.total ?? 0);
     const comments = await db
       .select()
       .from(issue_comments)
       .where(eq(issue_comments.issue_id, req.params.issueId))
-      .orderBy(issue_comments.created_at);
-    res.json({ data: comments });
+      .orderBy(issue_comments.created_at)
+      .limit(limit)
+      .offset(offset);
+    res.json({ data: comments, meta: { total, limit, offset } });
   } catch (err) {
     next(err);
   }
@@ -450,19 +514,26 @@ issuesRouter.post('/:issueId/comments', async (req, res, next) => {
       res.status(404).json({ error: 'not_found', message: 'Issueが見つかりません' });
       return;
     }
-    if (!req.userId) {
-      res.status(403).json({
-        error: 'forbidden',
-        message: 'ユーザーに紐付くAPIキーでのみコメントを投稿できます',
-      });
-      return;
+    // userId未設定（board APIキー）の場合はcompanyのadminユーザーをauthorとして使用
+    let authorId = req.userId;
+    if (!authorId) {
+      const adminRow = await db
+        .select({ user_id: company_memberships.user_id })
+        .from(company_memberships)
+        .where(and(eq(company_memberships.company_id, req.companyId!), eq(company_memberships.role, 'admin')))
+        .limit(1);
+      authorId = adminRow[0]?.user_id ?? undefined;
+      if (!authorId) {
+        res.status(403).json({ error: 'forbidden', message: 'コメント投稿に必要なユーザーが見つかりません' });
+        return;
+      }
     }
     const sanitizedBody = sanitizeString(body);
     const comment = await db
       .insert(issue_comments)
       .values({
         issue_id: req.params.issueId,
-        author_id: req.userId,
+        author_id: authorId,
         body: sanitizedBody,
       })
       .returning();

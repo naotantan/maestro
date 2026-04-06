@@ -1,22 +1,12 @@
 import { Router, type Router as RouterType } from 'express';
-import { getDb, agent_handoffs, agents } from '@maestro/db';
+import { getDb, agent_handoffs } from '@maestro/db';
 import { eq, and } from 'drizzle-orm';
 import { sanitizeString, sanitizePagination } from '../middleware/validate';
+import { findOwnedAgentWithDetails } from '../utils/ownership';
 
 export const handoffsRouter: RouterType = Router();
 
 const VALID_STATUSES = ['pending', 'running', 'completed', 'failed', 'cancelled'] as const;
-
-// 自テナント内のエージェントIDか確認するヘルパー
-async function findOwnedAgent(companyId: string, agentId: string) {
-  const db = getDb();
-  const rows = await db
-    .select({ id: agents.id, type: agents.type, config: agents.config, enabled: agents.enabled })
-    .from(agents)
-    .where(and(eq(agents.id, agentId), eq(agents.company_id, companyId)))
-    .limit(1);
-  return rows[0] ?? null;
-}
 
 // GET /api/handoffs
 handoffsRouter.get('/', async (req, res, next) => {
@@ -73,13 +63,15 @@ handoffsRouter.post('/', async (req, res, next) => {
       return;
     }
 
+    const db = getDb();
+
     // テナント所有確認
-    const fromAgent = await findOwnedAgent(req.companyId!, from_agent_id);
+    const fromAgent = await findOwnedAgentWithDetails(db, req.companyId!, from_agent_id);
     if (!fromAgent) {
       res.status(400).json({ error: 'validation_failed', message: 'from_agent_id が見つからないか、アクセス権がありません' });
       return;
     }
-    const toAgent = await findOwnedAgent(req.companyId!, to_agent_id);
+    const toAgent = await findOwnedAgentWithDetails(db, req.companyId!, to_agent_id);
     if (!toAgent) {
       res.status(400).json({ error: 'validation_failed', message: 'to_agent_id が見つからないか、アクセス権がありません' });
       return;
@@ -87,14 +79,12 @@ handoffsRouter.post('/', async (req, res, next) => {
 
     // next_agent_id が指定されている場合はテナント確認
     if (next_agent_id) {
-      const nextAgent = await findOwnedAgent(req.companyId!, next_agent_id);
+      const nextAgent = await findOwnedAgentWithDetails(db, req.companyId!, next_agent_id);
       if (!nextAgent) {
         res.status(400).json({ error: 'validation_failed', message: 'next_agent_id が見つからないか、アクセス権がありません' });
         return;
       }
     }
-
-    const db = getDb();
     const [created] = await db.insert(agent_handoffs).values({
       company_id: req.companyId!,
       from_agent_id,
@@ -159,7 +149,7 @@ handoffsRouter.patch('/:id/cancel', async (req, res, next) => {
     const [updated] = await db
       .update(agent_handoffs)
       .set({ status: 'cancelled', completed_at: new Date() })
-      .where(eq(agent_handoffs.id, req.params.id))
+      .where(and(eq(agent_handoffs.id, req.params.id), eq(agent_handoffs.company_id, req.companyId!)))
       .returning();
 
     res.json({ data: updated });

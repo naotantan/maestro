@@ -1,96 +1,105 @@
-import { useEffect, useState } from 'react';
-import { Outlet, NavLink, useLocation } from 'react-router-dom';
+import { useEffect, useState, useMemo } from 'react';
+import { Outlet, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from '@maestro/i18n';
 import { authStore } from '../stores/auth.ts';
-import { useNavigate } from 'react-router-dom';
 import { clsx } from 'clsx';
 import {
-  Activity,
-  BellRing,
-  Bot,
-  BookOpen,
-  Briefcase,
-  Building2,
-  FolderKanban,
-  Gauge,
-  Goal,
-  LogOut,
-  Menu,
-  Plus,
-  Receipt,
-  Settings,
-  ShieldCheck,
-  Sparkles,
-  Workflow,
-  X,
+  Activity, BarChart2, Bell, Bot, BookOpen, Brain, Briefcase,
+  Building2, ChefHat, Clock, ExternalLink, FolderKanban,
+  Gauge, Globe, LogOut, Menu, Package, Receipt, Search,
+  Settings, ShieldCheck, Sparkles, Wand2, Workflow, X, Zap,
   type LucideIcon,
 } from 'lucide-react';
-import { QuickInstructionModal } from './QuickInstructionModal.tsx';
+import { CommandPalette } from './ui/CommandPalette.tsx';
 
-interface NavItem {
-  to: string;
-  labelKey: string;
-  icon: LucideIcon;
-}
+interface NavItem { to: string; labelKey: string; icon: LucideIcon; external?: boolean }
+interface NavSection { titleKey: string; items: NavItem[] }
 
-interface NavSection {
-  titleKey: string;
-  items: NavItem[];
-}
-
-const navSections: NavSection[] = [
+function buildNavSections(planeUrl: string): NavSection[] { return [
   {
-    titleKey: 'layout.sectionOverview',
+    // ホーム — まず全体像を把握する
+    titleKey: 'layout.sectionHome',
     items: [
       { to: '/', labelKey: 'nav.dashboard', icon: Gauge },
-      { to: '/inbox', labelKey: 'layout.inbox', icon: BellRing },
       { to: '/activity', labelKey: 'nav.activity', icon: Activity },
     ],
   },
   {
-    titleKey: 'layout.sectionExecution',
+    // タスク管理 — やるべき仕事を管理する
+    titleKey: 'layout.sectionTasks',
     items: [
-      { to: '/agents', labelKey: 'nav.agents', icon: Bot },
+      { to: '/issues', labelKey: 'nav.issues', icon: BookOpen },
       { to: '/projects', labelKey: 'nav.projects', icon: FolderKanban },
-      { to: '/routines', labelKey: 'nav.routines', icon: Workflow },
-      { to: '/sessions', labelKey: 'nav.sessions', icon: BookOpen },
+      { to: '/approvals', labelKey: 'nav.approvals', icon: ShieldCheck },
+      { to: planeUrl, labelKey: 'nav.plane', icon: ExternalLink, external: true },
     ],
   },
   {
-    titleKey: 'layout.sectionGovernance',
+    // AI実行 — エージェントとジョブを動かす
+    titleKey: 'layout.sectionExecution',
     items: [
-      { to: '/approvals', labelKey: 'nav.approvals', icon: ShieldCheck },
-      { to: '/costs', labelKey: 'nav.costs', icon: Receipt },
+      { to: '/agents', labelKey: 'nav.agents', icon: Bot },
+      { to: '/jobs', labelKey: 'nav.jobs', icon: Briefcase },
+      { to: '/routines', labelKey: 'nav.routines', icon: Workflow },
+      { to: '/playbooks', labelKey: 'nav.playbooks', icon: Wand2 },
+    ],
+  },
+  {
+    // ツール＆知識 — AIに使わせるリソース
+    titleKey: 'layout.sectionTools',
+    items: [
+      { to: '/skills', labelKey: 'nav.skillsPage', icon: Zap },
       { to: '/plugins', labelKey: 'nav.plugins', icon: Sparkles },
+      { to: '/recipes', labelKey: 'nav.recipes', icon: ChefHat },
+      { to: '/memory', labelKey: 'nav.memory', icon: Brain },
+    ],
+  },
+  {
+    // 記録・分析 — 何が起きたかを振り返る
+    titleKey: 'layout.sectionHistory',
+    items: [
+      { to: '/sessions', labelKey: 'nav.sessions', icon: Clock },
+      { to: '/artifacts', labelKey: 'nav.artifacts', icon: Package },
+      { to: '/analytics', labelKey: 'nav.analytics', icon: BarChart2 },
+    ],
+  },
+  {
+    // 管理 — システム設定と運用
+    titleKey: 'layout.sectionAdmin',
+    items: [
+      { to: '/webhooks', labelKey: 'nav.webhooks', icon: Globe },
+      { to: '/costs', labelKey: 'nav.costs', icon: Receipt },
       { to: '/org', labelKey: 'nav.org', icon: Building2 },
       { to: '/settings', labelKey: 'nav.settings', icon: Settings },
     ],
   },
-];
+]; }
 
 const mobilePrimaryNav = [
   { to: '/', labelKey: 'layout.home', icon: Gauge },
   { to: '/agents', labelKey: 'nav.agents', icon: Bot },
-  { to: '/approvals', labelKey: 'nav.approvals', icon: ShieldCheck },
+  { to: '/jobs', labelKey: 'nav.jobs', icon: Briefcase },
+  { to: '/skills', labelKey: 'nav.skillsPage', icon: Zap },
   { to: '/settings', labelKey: 'nav.settings', icon: Settings },
 ];
 
-function isActivePath(currentPath: string, itemPath: string) {
-  if (itemPath === '/') return currentPath === '/';
-  return currentPath === itemPath || currentPath.startsWith(`${itemPath}/`);
-}
-
-function SidebarNavLink({
-  item,
-  onNavigate,
-  t,
-}: {
-  item: NavItem;
-  onNavigate?: () => void;
-  t: (key: string, options?: Record<string, unknown>) => string;
-}) {
+function SidebarNavLink({ item, onNavigate, t }: { item: NavItem; onNavigate?: () => void; t: (key: string) => string }) {
   const Icon = item.icon;
-
+  if (item.external) {
+    return (
+      <a
+        href={item.to}
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={onNavigate}
+        className="group flex items-center gap-3 rounded-lg px-3 py-2 text-[13px] text-[#5e5d59] font-normal hover:text-[#141413] hover:bg-[#e8e6dc] transition-all duration-150"
+      >
+        <Icon className="h-4 w-4 flex-shrink-0 text-[#87867f] group-hover:text-[#5e5d59] transition-colors" />
+        <span className="truncate">{t(item.labelKey)}</span>
+        <ExternalLink className="h-3 w-3 ml-auto opacity-40 group-hover:opacity-70" />
+      </a>
+    );
+  }
   return (
     <NavLink
       to={item.to}
@@ -98,26 +107,16 @@ function SidebarNavLink({
       onClick={onNavigate}
       className={({ isActive }) =>
         clsx(
-          'group flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition-all duration-200',
-          'focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 focus:ring-offset-slate-950',
+          'group flex items-center gap-3 rounded-lg px-3 py-2 text-[13px] transition-all duration-150',
           isActive
-            ? 'bg-sky-500/15 text-sky-100 shadow-[inset_0_0_0_1px_rgba(56,189,248,0.35)]'
-            : 'text-slate-400 hover:bg-white/5 hover:text-slate-100'
+            ? 'bg-[#c96442]/12 text-[#c96442] font-medium border-l-2 border-[#c96442]'
+            : 'text-[#5e5d59] font-normal hover:text-[#141413] hover:bg-[#e8e6dc]'
         )
       }
     >
       {({ isActive }) => (
         <>
-          <span
-            className={clsx(
-              'flex h-9 w-9 items-center justify-center rounded-lg border transition-colors',
-              isActive
-                ? 'border-sky-400/40 bg-sky-400/15 text-sky-200'
-                : 'border-slate-800 bg-slate-900/70 text-slate-500 group-hover:border-slate-700 group-hover:text-slate-200'
-            )}
-          >
-            <Icon className="h-4 w-4" />
-          </span>
+          <Icon className={clsx('h-4 w-4 flex-shrink-0 transition-colors', isActive ? 'text-[#c96442]' : 'text-[#87867f] group-hover:text-[#5e5d59]')} />
           <span className="truncate">{t(item.labelKey)}</span>
         </>
       )}
@@ -125,35 +124,27 @@ function SidebarNavLink({
   );
 }
 
-function SidebarContent({
-  onNavigate,
-  onLogout,
-  t,
-}: {
-  onNavigate?: () => void;
-  onLogout: () => void;
-  t: (key: string, options?: Record<string, unknown>) => string;
-}) {
+function SidebarContent({ onNavigate, onLogout, t, navSections }: { onNavigate?: () => void; onLogout: () => void; t: (key: string) => string; navSections: NavSection[] }) {
   return (
     <>
-      <div className="border-b border-white/10 px-5 py-5">
-        <div className="inline-flex items-center rounded-full border border-sky-400/20 bg-sky-400/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-sky-200">
-          {t('layout.console')}
+      {/* Brand */}
+      <div className="px-5 py-5 border-b border-[#e8e6dc]">
+        <div className="flex items-center gap-2">
+          <div className="h-7 w-7 rounded-lg bg-[#c96442] flex items-center justify-center">
+            <span className="text-white text-xs font-semibold">M</span>
+          </div>
+          <span className="text-base text-[#141413]" style={{fontWeight: 500, fontFamily: 'Georgia, serif', letterSpacing: '-0.3px'}}>maestro</span>
         </div>
-        <div className="mt-4">
-          <h1 className="text-2xl font-semibold tracking-tight text-white">.maestro</h1>
-          <p className="mt-1 max-w-xs text-sm leading-6 text-slate-400">{t('layout.consoleDescription')}</p>
-        </div>
+        <p className="mt-2 text-[12px] leading-relaxed text-[#87867f]">{t('layout.consoleDescription')}</p>
       </div>
 
-      <nav className="flex-1 overflow-y-auto px-3 py-4 pb-6">
-        <div className="space-y-6">
+      {/* Nav */}
+      <nav className="flex-1 overflow-y-auto px-3 py-3" aria-label={t('layout.mainNavigation')}>
+        <div className="space-y-5">
           {navSections.map((section) => (
             <section key={section.titleKey}>
-              <p className="px-3 text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">
-                {t(section.titleKey)}
-              </p>
-              <div className="mt-2 space-y-1.5">
+              <p className="px-3 mb-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#87867f]">{t(section.titleKey)}</p>
+              <div className="space-y-0.5">
                 {section.items.map((item) => (
                   <SidebarNavLink key={item.to} item={item} onNavigate={onNavigate} t={t} />
                 ))}
@@ -163,23 +154,16 @@ function SidebarContent({
         </div>
       </nav>
 
-      <div className="border-t border-white/10 bg-slate-950/80 px-3 py-3">
-        <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-4">
-          <p className="text-xs font-medium uppercase tracking-[0.22em] text-slate-500">{t('layout.session')}</p>
-          <p className="mt-2 text-sm text-slate-300">{t('layout.sessionDescription')}</p>
-          <button
-            onClick={onLogout}
-            className={clsx(
-              'mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 px-3 py-2.5 text-sm font-medium transition-colors',
-              'text-slate-300 hover:border-red-400/30 hover:bg-red-500/10 hover:text-red-100',
-              'focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-slate-950'
-            )}
-            aria-label={t('nav.logout')}
-          >
-            <LogOut className="h-4 w-4" />
-            <span>{t('nav.logout')}</span>
-          </button>
-        </div>
+      {/* Footer */}
+      <div className="border-t border-[#e8e6dc] px-3 py-3">
+        <button
+          onClick={onLogout}
+          className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-[13px] font-medium text-[#87867f] transition-colors hover:bg-[#f5c8c8] hover:text-[#b53333]"
+          aria-label={t('nav.logout')}
+        >
+          <LogOut className="h-4 w-4" />
+          <span>{t('nav.logout')}</span>
+        </button>
       </div>
     </>
   );
@@ -190,77 +174,131 @@ export default function Layout() {
   const navigate = useNavigate();
   const location = useLocation();
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
-  const [isInstructionOpen, setIsInstructionOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [planeUrl, setPlaneUrl] = useState('http://localhost:8090');
+
+  useEffect(() => {
+    fetch('/api/settings/plane')
+      .then((r) => r.json())
+      .then((d: { data?: { baseUrl?: string } }) => {
+        if (d.data?.baseUrl) setPlaneUrl(d.data.baseUrl);
+      })
+      .catch(() => {/* use default */});
+  }, []);
+
+  const navSections = useMemo(() => buildNavSections(planeUrl), [planeUrl]);
 
   function handleLogout() {
     authStore.logout();
     navigate('/login');
   }
 
+  useEffect(() => { setIsMobileNavOpen(false); }, [location.pathname]);
+
+  // Fetch unread notification count
   useEffect(() => {
-    setIsMobileNavOpen(false);
-  }, [location.pathname]);
+    let cancelled = false;
+    const fetchUnread = () => {
+      fetch('/api/notifications/unread-count')
+        .then((r) => r.json())
+        .then((data: { count?: number }) => {
+          if (!cancelled) setUnreadCount(data.count ?? 0);
+        })
+        .catch(() => {/* silently ignore */});
+    };
+    fetchUnread();
+    const interval = setInterval(fetchUnread, 60_000);
+    return () => { cancelled = true; clearInterval(interval); };
+  }, []);
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100">
-      <div className="absolute inset-x-0 top-0 h-72 bg-[radial-gradient(circle_at_top,_rgba(56,189,248,0.16),_transparent_46%),linear-gradient(180deg,rgba(15,23,42,0.85)_0%,rgba(2,6,23,0)_100%)]" />
+    <div className="min-h-screen bg-th-bg text-th-text">
+      {/* CommandPalette — rendered at root so Cmd+K works everywhere */}
+      <CommandPalette />
 
       <div className="relative flex min-h-screen">
-        <aside className="hidden w-72 shrink-0 border-r border-white/10 bg-slate-950/95 backdrop-blur xl:flex xl:flex-col 2xl:w-80">
-          <SidebarContent onLogout={handleLogout} t={t} />
+        {/* Desktop sidebar */}
+        <aside className="hidden w-60 shrink-0 border-r border-[#e8e6dc] xl:flex xl:flex-col" style={{ background: '#f0eee6' }}>
+          <SidebarContent onLogout={handleLogout} t={t} navSections={navSections} />
         </aside>
 
+        {/* Mobile overlay */}
         {isMobileNavOpen && (
           <button
             type="button"
-            className="fixed inset-0 z-40 bg-slate-950/70 backdrop-blur-sm xl:hidden"
+            className="fixed inset-0 z-40 bg-th-overlay backdrop-blur-sm xl:hidden"
             onClick={() => setIsMobileNavOpen(false)}
             aria-label={t('layout.closeNavigation')}
           />
         )}
 
+        {/* Mobile sidebar */}
         <aside
           className={clsx(
-            'fixed inset-y-0 left-0 z-50 flex w-[88vw] max-w-sm flex-col border-r border-white/10 bg-slate-950/98 shadow-2xl shadow-slate-950/50 backdrop-blur transition-transform duration-300 xl:hidden',
+            'fixed inset-y-0 left-0 z-50 flex w-[80vw] max-w-[280px] flex-col border-r border-[#e8e6dc] shadow-th-lg transition-transform duration-200 xl:hidden',
             isMobileNavOpen ? 'translate-x-0' : '-translate-x-full'
           )}
+          style={{ background: '#f0eee6' }}
         >
           <div className="flex items-center justify-end px-3 pt-3">
             <button
               type="button"
               onClick={() => setIsMobileNavOpen(false)}
-              className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-slate-200 transition-colors hover:bg-white/10"
+              className="h-9 w-9 flex items-center justify-center rounded-lg text-[#87867f] hover:bg-[#e8e6dc]"
               aria-label={t('layout.closeMenu')}
             >
-              <X className="h-5 w-5" />
+              <X className="h-4 w-4" />
             </button>
           </div>
-          <SidebarContent onNavigate={() => setIsMobileNavOpen(false)} onLogout={handleLogout} t={t} />
+          <SidebarContent onNavigate={() => setIsMobileNavOpen(false)} onLogout={handleLogout} t={t} navSections={navSections} />
         </aside>
 
+        {/* Main */}
         <div className="flex min-w-0 flex-1 flex-col">
-          <header className="sticky top-0 z-30 border-b border-white/10 bg-slate-950/80 backdrop-blur xl:hidden">
+          {/* Mobile header */}
+          <header className="sticky top-0 z-30 border-b border-th-border bg-th-bg/80 backdrop-blur-md xl:hidden">
             <div className="flex items-center justify-between px-4 py-3">
               <button
                 type="button"
                 onClick={() => setIsMobileNavOpen(true)}
-                className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-slate-100 transition-colors hover:bg-white/10"
+                className="h-9 w-9 flex items-center justify-center rounded-th-sm text-th-text-2 hover:bg-th-surface-1"
                 aria-label={t('layout.openMenu')}
               >
                 <Menu className="h-5 w-5" />
               </button>
-              <div className="text-center">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-sky-300">.maestro</p>
-                <p className="text-sm text-slate-400">{t('layout.console')}</p>
+              <p className="text-sm font-semibold text-th-text">.maestro</p>
+              <div className="flex items-center gap-1">
+                {/* Search */}
+                <NavLink
+                  to="/search"
+                  className="h-9 w-9 flex items-center justify-center rounded-th-sm text-th-text-2 hover:bg-th-surface-1"
+                  aria-label={t('nav.search')}
+                >
+                  <Search className="h-4 w-4" />
+                </NavLink>
+                {/* Notifications */}
+                <NavLink
+                  to="/notifications"
+                  className="relative h-9 w-9 flex items-center justify-center rounded-th-sm text-th-text-2 hover:bg-th-surface-1"
+                  aria-label={t('nav.notifications')}
+                >
+                  <Bell className="h-4 w-4" />
+                  {unreadCount > 0 && (
+                    <span className="absolute top-1 right-1 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-th-accent px-1 text-[9px] font-bold text-white leading-none">
+                      {unreadCount > 99 ? '99+' : unreadCount}
+                    </span>
+                  )}
+                </NavLink>
+                {/* Logout */}
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="h-9 w-9 flex items-center justify-center rounded-th-sm text-th-text-2 hover:bg-th-surface-1"
+                  aria-label={t('nav.logout')}
+                >
+                  <LogOut className="h-4 w-4" />
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={handleLogout}
-                className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-slate-100 transition-colors hover:bg-white/10"
-                aria-label={t('nav.logout')}
-              >
-                <LogOut className="h-5 w-5" />
-              </button>
             </div>
           </header>
 
@@ -268,33 +306,20 @@ export default function Layout() {
             <Outlet />
           </main>
 
-          {/* 常設「開発指示」ボタン（右下固定） */}
-          <button
-            type="button"
-            onClick={() => setIsInstructionOpen(true)}
-            className="fixed bottom-20 right-4 z-40 inline-flex items-center gap-2 rounded-full border border-sky-500/40 bg-sky-600/90 px-4 py-2.5 text-sm font-medium text-white shadow-lg shadow-sky-900/40 backdrop-blur transition-all hover:bg-sky-500 hover:shadow-sky-800/50 xl:bottom-6 xl:right-6"
-            title="開発指示を登録 (⌘I)"
-          >
-            <Plus className="h-4 w-4" />
-            <span>指示を登録</span>
-          </button>
-
-          <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-white/10 bg-slate-950/95 px-2 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] pt-2 backdrop-blur xl:hidden">
+          {/* Mobile bottom nav */}
+          <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-th-border bg-th-bg/95 backdrop-blur-md px-2 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] pt-2 xl:hidden" aria-label={t('layout.mobileNavigation')}>
             <div className="grid grid-cols-5 gap-1">
               {mobilePrimaryNav.map((item) => {
                 const Icon = item.icon;
-                const isActive = isActivePath(location.pathname, item.to);
-
+                const isActive = location.pathname === item.to || (item.to !== '/' && location.pathname.startsWith(item.to));
                 return (
                   <NavLink
                     key={item.to}
                     to={item.to}
                     end={item.to === '/'}
                     className={clsx(
-                      'flex flex-col items-center justify-center gap-1 rounded-2xl px-2 py-2 text-[11px] font-medium transition-colors',
-                      isActive
-                        ? 'bg-sky-500/15 text-sky-100'
-                        : 'text-slate-500 hover:bg-white/5 hover:text-slate-200'
+                      'flex flex-col items-center justify-center gap-1 rounded-th-md px-2 py-2 text-[10px] font-medium transition-colors',
+                      isActive ? 'text-th-accent' : 'text-th-text-4 hover:text-th-text-2'
                     )}
                   >
                     <Icon className="h-4 w-4" />
@@ -306,12 +331,6 @@ export default function Layout() {
           </nav>
         </div>
       </div>
-
-      {/* 開発指示モーダル */}
-      <QuickInstructionModal
-        open={isInstructionOpen}
-        onClose={() => setIsInstructionOpen(false)}
-      />
     </div>
   );
 }

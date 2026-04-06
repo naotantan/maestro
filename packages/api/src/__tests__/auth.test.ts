@@ -38,7 +38,7 @@ describe('POST /api/auth/register', () => {
       .post('/api/auth/register')
       .send({
         email: 'new@example.com',
-        password: 'password123',
+        password: 'Password123',
         name: 'Test User',
         companyName: 'Test Corp',
       });

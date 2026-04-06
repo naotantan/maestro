@@ -1,19 +1,42 @@
 import { Router, type Router as RouterType } from 'express';
 import { getDb, projects, project_workspaces, issues, goals, issue_goals } from '@maestro/db';
-import { eq, and, desc, inArray } from 'drizzle-orm';
-import { sanitizeString } from '../middleware/validate';
+import { eq, and, desc, inArray, sql } from 'drizzle-orm';
+import { sanitizeString, sanitizePagination } from '../middleware/validate';
+
+/** プロジェクト名からプレフィックスを自動生成 */
+function generatePrefix(name: string): string {
+  // 英字のみの場合: 大文字3文字（例: "maestro開発" → "MAE"）
+  const alpha = name.replace(/[^a-zA-Z]/g, '').toUpperCase();
+  if (alpha.length >= 3) return alpha.slice(0, 3);
+
+  // 英字が少ない場合: 日本語の頭文字をローマ字風に（カタカナ/ひらがなの最初の子音）
+  // フォールバック: 名前のハッシュ的に3文字
+  if (alpha.length > 0) return alpha.padEnd(3, 'X');
+
+  // 全角のみ: 先頭3文字のコードポイントからアルファベットを生成
+  const chars = [...name.replace(/\s/g, '')].slice(0, 3);
+  return chars.map(c => String.fromCharCode(65 + (c.charCodeAt(0) % 26))).join('');
+}
 
 export const projectsRouter: RouterType = Router();
 
 projectsRouter.get('/', async (req, res, next) => {
   try {
+    const { limit, offset } = sanitizePagination(req.query.limit, req.query.offset);
     const db = getDb();
+    const [countResult] = await db
+      .select({ total: sql<number>`count(*)` })
+      .from(projects)
+      .where(eq(projects.company_id, req.companyId!));
+    const total = Number(countResult?.total ?? 0);
     const rows = await db
       .select()
       .from(projects)
       .where(eq(projects.company_id, req.companyId!))
-      .orderBy(desc(projects.created_at));
-    res.json({ data: rows });
+      .orderBy(desc(projects.created_at))
+      .limit(limit)
+      .offset(offset);
+    res.json({ data: rows, meta: { total, limit, offset } });
   } catch (err) {
     next(err);
   }
@@ -34,12 +57,19 @@ projectsRouter.post('/', async (req, res, next) => {
     }
     const sanitizedName = sanitizeString(name);
     const sanitizedDescription = description ? sanitizeString(description) : description;
+
+    // プレフィックス自動生成: 名前からアルファベット大文字3文字を抽出
+    const prefix = (req.body as Record<string, unknown>).prefix
+      ? sanitizeString(String((req.body as Record<string, unknown>).prefix)).toUpperCase().slice(0, 10)
+      : generatePrefix(sanitizedName);
+
     const db = getDb();
     const newProject = await db
       .insert(projects)
       .values({
         company_id: req.companyId!,
         name: sanitizedName,
+        prefix,
         description: sanitizedDescription,
       })
       .returning();
@@ -125,6 +155,7 @@ projectsRouter.delete('/:projectId', async (req, res, next) => {
 // GET /api/projects/:projectId/issues — プロジェクト紐付きIssue一覧
 projectsRouter.get('/:projectId/issues', async (req, res, next) => {
   try {
+    const { limit, offset } = sanitizePagination(req.query.limit, req.query.offset);
     const db = getDb();
     const projectCheck = await db.select({ id: projects.id }).from(projects)
       .where(and(eq(projects.id, req.params.projectId), eq(projects.company_id, req.companyId!))).limit(1);
@@ -132,10 +163,17 @@ projectsRouter.get('/:projectId/issues', async (req, res, next) => {
       res.status(404).json({ error: 'not_found', message: 'Projectが見つかりません' });
       return;
     }
+    const [countResult] = await db
+      .select({ total: sql<number>`count(*)` })
+      .from(issues)
+      .where(and(eq(issues.project_id, req.params.projectId), eq(issues.company_id, req.companyId!)));
+    const total = Number(countResult?.total ?? 0);
     const rows = await db.select().from(issues)
       .where(and(eq(issues.project_id, req.params.projectId), eq(issues.company_id, req.companyId!)))
-      .orderBy(desc(issues.created_at));
-    res.json({ data: rows });
+      .orderBy(desc(issues.created_at))
+      .limit(limit)
+      .offset(offset);
+    res.json({ data: rows, meta: { total, limit, offset } });
   } catch (err) {
     next(err);
   }
@@ -144,6 +182,7 @@ projectsRouter.get('/:projectId/issues', async (req, res, next) => {
 // GET /api/projects/:projectId/goals — プロジェクト紐付きGoal一覧
 projectsRouter.get('/:projectId/goals', async (req, res, next) => {
   try {
+    const { limit, offset } = sanitizePagination(req.query.limit, req.query.offset);
     const db = getDb();
     const projectCheck = await db.select({ id: projects.id }).from(projects)
       .where(and(eq(projects.id, req.params.projectId), eq(projects.company_id, req.companyId!))).limit(1);
@@ -151,10 +190,17 @@ projectsRouter.get('/:projectId/goals', async (req, res, next) => {
       res.status(404).json({ error: 'not_found', message: 'Projectが見つかりません' });
       return;
     }
+    const [countResult] = await db
+      .select({ total: sql<number>`count(*)` })
+      .from(goals)
+      .where(and(eq(goals.project_id, req.params.projectId), eq(goals.company_id, req.companyId!)));
+    const total = Number(countResult?.total ?? 0);
     const rows = await db.select().from(goals)
       .where(and(eq(goals.project_id, req.params.projectId), eq(goals.company_id, req.companyId!)))
-      .orderBy(desc(goals.created_at));
-    res.json({ data: rows });
+      .orderBy(desc(goals.created_at))
+      .limit(limit)
+      .offset(offset);
+    res.json({ data: rows, meta: { total, limit, offset } });
   } catch (err) {
     next(err);
   }

@@ -42,6 +42,11 @@ async function runAgentHeartbeat(
     agent_id: agentId,
     status: 'running',
   }).returning();
+
+  if (!runRecord.length) {
+    console.error(`[HeartbeatEngine] heartbeat_runs INSERT が空の結果を返しました (agent=${agentId})`);
+    return;
+  }
   const runId = runRecord[0].id;
 
   try {

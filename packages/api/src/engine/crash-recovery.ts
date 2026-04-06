@@ -6,7 +6,7 @@
  */
 
 import { getDb, agents, agent_runtime_state, heartbeat_runs, heartbeat_run_events } from '@maestro/db';
-import { eq, and, count } from 'drizzle-orm';
+import { eq, and, count, gte } from 'drizzle-orm';
 
 // クラッシュ回復チェック間隔（デフォルト60秒）
 const RECOVERY_INTERVAL_MS = parseInt(process.env.RECOVERY_INTERVAL_MS || '60000', 10);
@@ -27,10 +27,16 @@ async function recoverCrashedAgents(): Promise<void> {
   const db = getDb();
 
   try {
-    // クラッシュ状態のエージェントを全取得
+    // クラッシュ状態かつ有効なエージェントのみ取得（全件スキャンを回避）
     const crashedStates = await db
-      .select()
-      .from(agent_runtime_state);
+      .select({
+        agent_id: agent_runtime_state.agent_id,
+        state: agent_runtime_state.state,
+        last_error: agent_runtime_state.last_error,
+      })
+      .from(agent_runtime_state)
+      .innerJoin(agents, eq(agent_runtime_state.agent_id, agents.id))
+      .where(eq(agents.enabled, true));
 
     for (const runtimeState of crashedStates) {
       const state = runtimeState.state as RuntimeState;
@@ -38,12 +44,14 @@ async function recoverCrashedAgents(): Promise<void> {
 
       // restart_count は state JSON ではなく heartbeat_runs テーブルから取得する。
       // heartbeat-engine.ts が state を上書きするため、state に持たせても消えてしまう。
+      const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
       const failedResult = await db
         .select({ cnt: count() })
         .from(heartbeat_runs)
         .where(and(
           eq(heartbeat_runs.agent_id, runtimeState.agent_id),
           eq(heartbeat_runs.status, 'failed'),
+          gte(heartbeat_runs.started_at, twentyFourHoursAgo),
         ));
       const restartCount = failedResult[0]?.cnt ?? 0;
 
@@ -61,13 +69,6 @@ async function recoverCrashedAgents(): Promise<void> {
         console.warn(`[CrashRecovery] エージェント ${runtimeState.agent_id} が最大再起動回数(${MAX_RESTART_COUNT})に達したため無効化`);
         continue;
       }
-
-      // エージェントが有効かチェック
-      const agentRows = await db.select({ id: agents.id, enabled: agents.enabled })
-        .from(agents)
-        .where(and(eq(agents.id, runtimeState.agent_id), eq(agents.enabled, true)));
-
-      if (!agentRows.length) continue;
 
       const nextAttempt = restartCount + 1;
       console.log(`[CrashRecovery] エージェント ${runtimeState.agent_id} を回復中 (試行: ${nextAttempt}/${MAX_RESTART_COUNT})`);

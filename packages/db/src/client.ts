@@ -20,7 +20,12 @@ export function getDb() {
     if (!connectionString) {
       throw new Error('DATABASE_URL 環境変数が設定されていません');
     }
-    pool = new Pool({ connectionString });
+    pool = new Pool({
+      connectionString,
+      max: 20,
+      idleTimeoutMillis: 30000,
+      connectionTimeoutMillis: 5000,
+    });
     db = drizzle(pool, { schema });
   }
   return db;

@@ -51,10 +51,10 @@ const STATUS_BADGE: Record<string, 'warning' | 'success' | 'default' | 'info'> =
 function CommentBody({ body }: { body: string }) {
   const parts = body.split(/(@[\w\u3040-\u9FFF\u30A0-\u30FF\-]+)/g);
   return (
-    <p className="text-slate-300 text-sm mt-1">
+    <p className="text-th-text-2 text-sm mt-1">
       {parts.map((part, i) =>
         part.startsWith('@') ? (
-          <span key={i} className="text-sky-400 font-medium">{part}</span>
+          <span key={i} className="text-th-accent font-medium">{part}</span>
         ) : (
           <span key={i}>{part}</span>
         )
@@ -67,6 +67,7 @@ export default function IssueDetailPage() {
   const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const [newComment, setNewComment] = useState('');
+  const [commentError, setCommentError] = useState('');
   const queryClient = useQueryClient();
 
   // @メンション サジェスト状態
@@ -90,12 +91,16 @@ export default function IssueDetailPage() {
   );
 
   // @メンション検索（300ms デバウンス）
-  const fetchSuggestions = useCallback(async (q: string) => {
-    if (!q && q !== '') return;
-    const res = await api.get('/agents/search', { params: { q } });
-    setSuggestions(res.data.data ?? []);
-    setSuggestionVisible(true);
-    setActiveSuggestion(0);
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const fetchSuggestions = useCallback((q: string) => {
+    if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+    debounceTimerRef.current = setTimeout(async () => {
+      if (!q && q !== '') return;
+      const res = await api.get('/agents/search', { params: { q } });
+      setSuggestions(res.data.data ?? []);
+      setSuggestionVisible(true);
+      setActiveSuggestion(0);
+    }, 300);
   }, []);
 
   // テキスト変更時: @メンション位置を検出
@@ -155,10 +160,15 @@ export default function IssueDetailPage() {
   // コメント投稿
   const handleAddComment = async () => {
     if (!newComment.trim()) return;
-    await api.post(`/issues/${id}/comments`, { body: newComment });
-    setNewComment('');
-    setSuggestionVisible(false);
-    queryClient.invalidateQueries(['issue-comments', id]);
+    setCommentError('');
+    try {
+      await api.post(`/issues/${id}/comments`, { body: newComment });
+      setNewComment('');
+      setSuggestionVisible(false);
+      queryClient.invalidateQueries(['issue-comments', id]);
+    } catch (err: unknown) {
+      setCommentError((err as any)?.response?.data?.message ?? t('common.error'));
+    }
   };
 
   if (isLoading) return <div className="p-6">{t('common.loading')}</div>;
@@ -168,46 +178,47 @@ export default function IssueDetailPage() {
 
   return (
     <div className="p-6 space-y-6 max-w-4xl">
-      <div className="bg-slate-800 rounded-lg p-6 border border-slate-700">
-        <p className="text-xs text-slate-500 mb-1">{data?.identifier}</p>
+      <div className="bg-th-surface-0 rounded-th-md p-6 border border-th-border">
+        <p className="text-xs text-th-text-4 mb-1">{data?.identifier}</p>
         <h1 className="text-3xl font-bold mb-2">{data?.title}</h1>
-        <p className="text-slate-400 text-sm mb-4">{formatDate(data?.created_at)}</p>
-        <p className="text-slate-300 mb-6">{data?.description ?? t('issues.noDescription')}</p>
+        <p className="text-th-text-3 text-sm mb-4">{formatDate(data?.created_at)}</p>
+        <p className="text-th-text-2 mb-6">{data?.description ?? t('issues.noDescription')}</p>
 
         <div className="flex gap-2 items-center">
-          <span className="text-sm text-slate-400">{t('common.status')}</span>
+          <span className="text-sm text-th-text-3">{t('common.status')}</span>
           <Badge variant={STATUS_BADGE[data?.status ?? ''] ?? 'default'}>
-            {data?.status}
+            {data?.status ? t(`issues.status.${data.status === 'in_progress' ? 'inProgress' : data.status === 'in_review' ? 'inReview' : data.status}`) : ''}
           </Badge>
         </div>
       </div>
 
       {/* コメント */}
-      <div className="bg-slate-800 rounded-lg p-6 border border-slate-700">
+      <div className="bg-th-surface-0 rounded-th-md p-6 border border-th-border">
         <h2 className="text-xl font-bold mb-4">{t('issues.comments')}</h2>
         <div className="space-y-3 mb-4">
           {commentsLoading ? (
-            <p className="text-slate-400 text-sm">{t('common.loading')}</p>
+            <p className="text-th-text-3 text-sm">{t('common.loading')}</p>
           ) : commentsError ? (
             <Alert variant="danger" message={t('issues.commentsFetchError')} />
           ) : comments.length > 0 ? (
             comments.map((comment) => (
               <div
                 key={comment.id}
-                className="bg-slate-900 rounded p-3 border border-slate-700"
+                className="bg-th-surface-1 rounded-th-md p-3 border border-th-border"
               >
-                <p className="font-mono text-xs text-slate-400">{comment.author_id}</p>
+                <p className="font-mono text-xs text-th-text-3">{comment.author_id}</p>
                 <CommentBody body={comment.body} />
-                <p className="text-xs text-slate-500 mt-2">{formatDate(comment.created_at)}</p>
+                <p className="text-xs text-th-text-4 mt-2">{formatDate(comment.created_at)}</p>
               </div>
             ))
           ) : (
-            <p className="text-slate-400">{t('issues.noComments')}</p>
+            <p className="text-th-text-3">{t('issues.noComments')}</p>
           )}
         </div>
 
         {/* コメント入力（@メンション サジェスト付き） */}
         <div className="space-y-2 relative">
+          {commentError && <Alert variant="danger" message={commentError} />}
           <textarea
             ref={textareaRef}
             value={newComment}
@@ -215,17 +226,17 @@ export default function IssueDetailPage() {
             onKeyDown={handleKeyDown}
             placeholder={`${t('issues.commentPlaceholder')} （@エージェント名でメンション）`}
             aria-label={t('issues.commentPlaceholder')}
-            className="w-full bg-slate-700 border border-slate-600 rounded px-3 py-2 text-white text-sm"
+            className="w-full bg-th-surface-1 border border-th-border-strong rounded-th-md px-3 py-2 text-th-text text-sm"
             rows={3}
           />
 
           {/* @メンション サジェストドロップダウン */}
           {suggestionVisible && suggestions.length > 0 && (
             <div
-              className="absolute z-50 bottom-full mb-1 left-0 w-64 bg-slate-900 border border-slate-600 rounded-lg shadow-xl overflow-hidden"
+              className="absolute z-50 bottom-full mb-1 left-0 w-64 bg-th-bg border border-th-border-strong rounded-th-md shadow-th-md overflow-hidden"
               onMouseDown={(e) => e.preventDefault()} // blur を防ぐ
             >
-              <div className="px-2 py-1 text-xs text-slate-500 border-b border-slate-700">
+              <div className="px-2 py-1 text-xs text-th-text-4 border-b border-th-border">
                 {mentionQuery ? `"${mentionQuery}" を検索中` : 'エージェント一覧'}
               </div>
               {suggestions.map((agent, i) => (
@@ -234,13 +245,13 @@ export default function IssueDetailPage() {
                   type="button"
                   className={`w-full text-left px-3 py-2 flex items-center gap-2 text-sm transition-colors ${
                     i === activeSuggestion
-                      ? 'bg-sky-700 text-white'
-                      : 'text-slate-200 hover:bg-slate-700'
+                      ? 'bg-th-accent text-th-text'
+                      : 'text-th-text-2 hover:bg-th-surface-1'
                   }`}
                   onClick={() => selectSuggestion(agent)}
                 >
                   <span className="flex-1 truncate">@{agent.name}</span>
-                  <span className="text-xs text-slate-400 flex-shrink-0">{agent.type}</span>
+                  <span className="text-xs text-th-text-3 flex-shrink-0">{agent.type}</span>
                 </button>
               ))}
             </div>
@@ -249,7 +260,7 @@ export default function IssueDetailPage() {
           <button
             onClick={handleAddComment}
             disabled={!newComment.trim()}
-            className="bg-sky-600 hover:bg-sky-700 disabled:opacity-50 px-4 py-2 rounded font-medium text-sm"
+            className="bg-th-accent hover:bg-th-accent/80 disabled:opacity-50 px-4 py-2 rounded-th-md font-medium text-sm"
           >
             {t('issues.addComment')}
           </button>

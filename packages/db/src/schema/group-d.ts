@@ -29,13 +29,13 @@ export const projects = pgTable('projects', {
   id: uuid('id').primaryKey().defaultRandom(),
   company_id: uuid('company_id').notNull().references(() => companies.id, { onDelete: 'cascade' }),
   name: varchar('name', { length: 255 }).notNull(),
+  prefix: varchar('prefix', { length: 10 }),
   description: text('description'),
   status: varchar('status', { length: 20 }).default('active'),
   created_at: timestamp('created_at').defaultNow(),
   updated_at: timestamp('updated_at').defaultNow(),
 }, (table) => ({
   idxCompany: index('idx_projects_company').on(table.company_id),
-  // 同一組織内でプロジェクト名が重複しないよう保証
   uqName: unique('uq_projects_company_name').on(table.company_id, table.name),
 }));
 

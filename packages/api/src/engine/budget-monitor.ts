@@ -34,6 +34,11 @@ async function checkBudgets(): Promise<void> {
       const totalCost = parseFloat(costResult[0]?.total ?? '0');
       const limitAmount = parseFloat(policy.limit_amount_usd as string);
 
+      if (Number.isNaN(limitAmount)) {
+        console.warn(`[BudgetMonitor] policy=${policy.id} limit_amount_usd が無効な値です: ${policy.limit_amount_usd} → スキップ`);
+        continue;
+      }
+
       if (totalCost >= limitAmount) {
         // 予算超過: 全エージェントを自動停止
         const enabledAgents = await db

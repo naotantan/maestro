@@ -16,6 +16,7 @@
     "approverValue": "承認者: {{id}}",
     "approverRoleValue": "ロール: {{role}}",
     "approverFallback": "組織メンバー情報との突合なし",
-    "notAvailable": "利用不可"
+    "notAvailable": "利用不可",
+    "statusFilter": "ステータスで絞り込み"
   }
 }

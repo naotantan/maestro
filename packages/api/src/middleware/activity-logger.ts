@@ -46,6 +46,13 @@ export function activityLogger(req: Request, res: Response, next: NextFunction):
     return;
   }
 
+  // サブリソース操作（例: /routines/:id/run）はログ対象外
+  const pathSegments = req.path.replace(/^\//, '').split('/');
+  if (pathSegments.length >= 3 && pathSegments[2] !== '') {
+    next();
+    return;
+  }
+
   // レスポンス完了後に記録（非同期・エラーはサイレント）
   res.on('finish', () => {
     if (res.statusCode < 200 || res.statusCode >= 300) return;
@@ -90,8 +97,9 @@ export function activityLogger(req: Request, res: Response, next: NextFunction):
           updated_fields: updatedFields.length > 0 ? updatedFields : undefined,
         },
       })
-      .catch(() => {
+      .catch((err: Error) => {
         // Activity記録の失敗はメインフローに影響させない
+        console.error('[ActivityLogger] Failed to log activity:', err.message);
       });
   });
 

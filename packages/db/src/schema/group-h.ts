@@ -10,9 +10,17 @@ export const plugins = pgTable('plugins', {
   company_id: uuid('company_id').notNull().references(() => companies.id, { onDelete: 'cascade' }),
   name: varchar('name', { length: 255 }).notNull(),
   description: text('description'),
+  description_translated: text('description_translated'),
+  translation_lang: varchar('translation_lang', { length: 10 }),
+  category: varchar('category', { length: 100 }),
+  usage_content: text('usage_content'),
+  usage_examples: text('usage_examples'),
+  trigger_type: varchar('trigger_type', { length: 20 }).default('explicit'),
   repository_url: text('repository_url'),
   version: varchar('version', { length: 20 }).default('1.0.0'),
   enabled: boolean('enabled').default(true),
+  usage_count: integer('usage_count').notNull().default(0),
+  last_used_at: timestamp('last_used_at'),
   created_at: timestamp('created_at').defaultNow(),
   updated_at: timestamp('updated_at').defaultNow(),
 }, (table) => ({
@@ -171,8 +179,12 @@ export const session_summaries = pgTable('session_summaries', {
   session_id: varchar('session_id', { length: 255 }),
   // どのエージェント（Claude Code インスタンス）が記録したか
   agent_id: uuid('agent_id').references(() => agents.id, { onDelete: 'set null' }),
-  // 作業サマリー本文
+  // 作業サマリー本文（Markdown全文 — 後方互換）
   summary: text('summary').notNull(),
+  // 構造化データ（UIで直接表示できる形式）
+  headline: varchar('headline', { length: 500 }),
+  tasks: json('tasks').$type<string[]>(),
+  decisions: json('decisions').$type<string[]>(),
   // 変更・作成されたファイル一覧
   changed_files: json('changed_files').$type<string[]>(),
   // 関連 Issue ID 一覧
@@ -185,4 +197,36 @@ export const session_summaries = pgTable('session_summaries', {
   idxCompany: index('idx_session_summaries_company').on(table.company_id),
   idxAgent: index('idx_session_summaries_agent').on(table.agent_id),
   idxEnded: index('idx_session_summaries_ended').on(table.session_ended_at),
+}));
+
+// H14: memories — AI セッション横断の長期記憶ストア
+// セッション終了時やユーザー指示で保存し、将来のセッションで検索・想起する。
+export const memories = pgTable('memories', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  company_id: uuid('company_id').notNull().references(() => companies.id, { onDelete: 'cascade' }),
+  // 記憶の種類: user, feedback, project, reference, session
+  type: varchar('type', { length: 50 }).notNull().default('session'),
+  // 短いタイトル（検索用）
+  title: varchar('title', { length: 500 }).notNull(),
+  // 記憶の本文
+  content: text('content').notNull(),
+  // 関連タグ（検索・フィルタ用）
+  tags: json('tags').$type<string[]>().default([]),
+  // どのセッションで記録されたか
+  session_id: varchar('session_id', { length: 255 }),
+  // どのプロジェクト(ディレクトリ)に関連するか
+  project_path: varchar('project_path', { length: 1000 }),
+  // 重要度 1-5 (5が最重要、古い記憶の整理に使う)
+  importance: integer('importance').notNull().default(3),
+  // 最後に想起（参照）された日時
+  last_recalled_at: timestamp('last_recalled_at'),
+  // 想起回数
+  recall_count: integer('recall_count').notNull().default(0),
+  created_at: timestamp('created_at').defaultNow(),
+  updated_at: timestamp('updated_at').defaultNow(),
+}, (table) => ({
+  idxMemCompany: index('idx_memories_company').on(table.company_id),
+  idxMemType: index('idx_memories_type').on(table.company_id, table.type),
+  idxMemProject: index('idx_memories_project').on(table.company_id, table.project_path),
+  idxMemCreated: index('idx_memories_created').on(table.company_id, table.created_at),
 }));

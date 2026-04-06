@@ -1,9 +1,9 @@
 import { Router, type Router as RouterType } from 'express';
 import { getDb, agents, heartbeat_runs, agent_api_keys } from '@maestro/db';
-import { eq, and, desc } from 'drizzle-orm';
+import { eq, and, desc, sql } from 'drizzle-orm';
 import { generateApiKey, encrypt } from '../utils/crypto';
 import { API_KEY_PREFIXES, type AgentType } from '@maestro/shared';
-import { sanitizeString } from '../middleware/validate';
+import { sanitizeString, sanitizePagination } from '../middleware/validate';
 
 // 有効なエージェントタイプ一覧（AgentType ユニオンを配列で保持）
 const VALID_AGENT_TYPES: AgentType[] = [
@@ -21,9 +21,21 @@ export const agentsRouter: RouterType = Router();
 // GET /api/agents
 agentsRouter.get('/', async (req, res, next) => {
   try {
+    const { limit, offset } = sanitizePagination(req.query.limit, req.query.offset);
     const db = getDb();
-    const rows = await db.select().from(agents).where(eq(agents.company_id, req.companyId!));
-    res.json({ data: rows });
+    const [countResult] = await db
+      .select({ total: sql<number>`count(*)` })
+      .from(agents)
+      .where(eq(agents.company_id, req.companyId!));
+    const total = Number(countResult?.total ?? 0);
+    const rows = await db
+      .select()
+      .from(agents)
+      .where(eq(agents.company_id, req.companyId!))
+      .orderBy(desc(agents.created_at))
+      .limit(limit)
+      .offset(offset);
+    res.json({ data: rows, meta: { total, limit, offset } });
   } catch (err) {
     next(err);
   }
@@ -159,16 +171,40 @@ agentsRouter.delete('/:agentId', async (req, res, next) => {
   }
 });
 
-// POST /api/agents/:agentId/heartbeat — ハートビート更新
+// POST /api/agents/:agentId/heartbeat — ハートビート更新（メタ情報付き）
 agentsRouter.post('/:agentId/heartbeat', async (req, res, next) => {
   try {
     const db = getDb();
-    await db
-      .update(agents)
-      .set({ last_heartbeat_at: new Date() })
-      .where(
-        and(eq(agents.id, req.params.agentId), eq(agents.company_id, req.companyId!))
-      );
+    const meta = req.body as {
+      working_directory?: string;
+      current_tool?: string;
+      tool_count?: number;
+      model?: string;
+      current_task?: string;
+    };
+
+    // 既存の config を取得してマージ
+    const existing = await db
+      .select({ config: agents.config })
+      .from(agents)
+      .where(and(eq(agents.id, req.params.agentId), eq(agents.company_id, req.companyId!)))
+      .limit(1);
+
+    const prevConfig = (existing[0]?.config ?? {}) as Record<string, unknown>;
+    const newConfig = {
+      ...prevConfig,
+      ...(meta.working_directory && { working_directory: meta.working_directory }),
+      ...(meta.current_tool && { current_tool: meta.current_tool }),
+      ...(meta.tool_count !== undefined && { tool_count: meta.tool_count }),
+      ...(meta.model && { model: meta.model }),
+      ...(meta.current_task && { current_task: meta.current_task }),
+    };
+
+    await db.execute(
+      sql`UPDATE agents SET last_heartbeat_at = NOW(), config = ${JSON.stringify(newConfig)}::json
+          WHERE id = ${req.params.agentId} AND company_id = ${req.companyId!}`
+    );
+
     res.json({ success: true, timestamp: new Date().toISOString() });
   } catch (err) {
     next(err);

@@ -51,10 +51,11 @@ authRouter.post('/register', async (req, res, next) => {
     }
 
     // パスワード強度チェック
-    if (!isStrongPassword(password)) {
+    const passwordCheck = isStrongPassword(password);
+    if (!passwordCheck.valid) {
       res.status(400).json({
         error: 'validation_failed',
-        message: 'パスワードは8文字以上128文字以下で入力してください。',
+        message: passwordCheck.message,
       });
       return;
     }

@@ -49,7 +49,14 @@
     "org": "组织",
     "settings": "设置",
     "inbox": "收件箱",
-    "logout": "退出登录"
+    "logout": "退出登录",
+    "skillsPage": "技能",
+    "jobs": "任务队列",
+    "memory": "记忆",
+    "analytics": "分析",
+    "webhooks": "Webhook",
+    "notifications": "通知",
+    "search": "搜索"
   },
   "auth": {
     "login": "登录",
@@ -95,7 +102,9 @@
     "closeNavigation": "关闭导航",
     "closeMenu": "关闭菜单",
     "openMenu": "打开菜单",
-    "goBack": "返回"
+    "goBack": "返回",
+    "mainNavigation": "主导航",
+    "mobileNavigation": "移动端导航"
   },
   "dashboard": {
     "title": "仪表盘",

@@ -5,6 +5,9 @@ import { sanitizeString, sanitizePagination } from '../middleware/validate';
 
 export const noteArticlesRouter: RouterType = Router();
 
+const VALID_ARTICLE_STATUSES = ['draft', 'pipeline', 'published', 'archived'] as const;
+const VALID_ARTICLE_TYPES = ['無料', 'Tier1', 'Tier2', 'メンバーシップ'] as const;
+
 // GET /api/note-articles — 一覧（新しい順）
 noteArticlesRouter.get('/', async (req, res, next) => {
   try {
@@ -89,9 +92,31 @@ noteArticlesRouter.patch('/:id', async (req, res, next) => {
         published_at?: string;
       };
 
+    // type の検証
+    if (type !== undefined && !VALID_ARTICLE_TYPES.includes(type as typeof VALID_ARTICLE_TYPES[number])) {
+      res.status(400).json({ error: 'validation_failed', message: `type が無効です。有効な値: ${VALID_ARTICLE_TYPES.join(', ')}` });
+      return;
+    }
+    // status の検証
+    if (status !== undefined && !VALID_ARTICLE_STATUSES.includes(status as typeof VALID_ARTICLE_STATUSES[number])) {
+      res.status(400).json({ error: 'validation_failed', message: `status が無効です。有効な値: ${VALID_ARTICLE_STATUSES.join(', ')}` });
+      return;
+    }
+    // published_at の日付検証
+    if (published_at !== undefined && published_at !== null && published_at !== '') {
+      const parsedDate = new Date(published_at);
+      if (isNaN(parsedDate.getTime())) {
+        res.status(400).json({ error: 'validation_failed', message: 'published_at が無効な日付です' });
+        return;
+      }
+    }
+
     const db = getDb();
     const updateFields: Record<string, unknown> = { updated_at: new Date() };
-    if (title     !== undefined) updateFields.title      = sanitizeString(title.trim());
+    if (title     !== undefined) {
+      // CRLF → LF 正規化
+      updateFields.title = sanitizeString(title.replace(/\r\n/g, '\n').replace(/\r/g, '\n').trim());
+    }
     if (type      !== undefined) updateFields.type       = type;
     if (price     !== undefined) updateFields.price      = price;
     if (difficulty !== undefined) updateFields.difficulty = difficulty;

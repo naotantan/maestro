@@ -16,3 +16,11 @@ export * from './group-g';
 export * from './group-h';
 // グループI: note記事（1テーブル）
 export * from './group-i';
+// グループJ: レシピ（2テーブル）
+export * from './group-j';
+// グループK: 指示書（2テーブル）
+export * from './group-k';
+// グループL: 成果物記録（1テーブル）
+export * from './group-l';
+// グループM: Webhooks・通知（2テーブル）
+export * from './group-m';

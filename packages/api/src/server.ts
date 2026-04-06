@@ -9,10 +9,10 @@ import { authRouter } from './routes/auth';
 import { orgRouter } from './routes/org';
 import { agentsRouter } from './routes/agents';
 import { issuesRouter } from './routes/issues';
-import { goalsRouter } from './routes/goals';
 import { projectsRouter } from './routes/projects';
 import { costsRouter } from './routes/costs';
 import { routinesRouter } from './routes/routines';
+import { jobsRouter } from './routes/jobs';
 import { approvalsRouter } from './routes/approvals';
 import { activityRouter } from './routes/activity';
 import { pluginsRouter } from './routes/plugins';
@@ -23,6 +23,16 @@ import { instructionsRouter } from './routes/instructions';
 import { sessionSummariesRouter } from './routes/session-summaries';
 import { sessionContextRouter } from './routes/session-context';
 import { noteArticlesRouter } from './routes/note-articles';
+import { memoriesRouter } from './routes/memories';
+import { recipesRouter } from './routes/recipes';
+import { playbooksRouter } from './routes/playbooks';
+import { artifactsRouter } from './routes/artifacts';
+import { analyticsRouter } from './routes/analytics';
+import { webhooksRouter } from './routes/webhooks';
+import { notificationsRouter } from './routes/notifications';
+import { searchRouter } from './routes/search';
+import { userRouter } from './routes/user';
+import { planeRouter } from './routes/plane';
 import { errorHandler } from './middleware/error-handler';
 import { authMiddleware } from './middleware/auth';
 import { activityLogger } from './middleware/activity-logger';
@@ -88,10 +98,11 @@ export function createApp(): Express {
     })
   );
 
-  // 認証エンドポイント専用の厳格なレート制限
+  // 認証エンドポイント専用の厳格なレート制限（開発環境では無効化）
+  const authRateLimitMax = process.env.NODE_ENV === 'development' ? 10000 : 10;
   const authRateLimit = rateLimit({
     windowMs: 15 * 60 * 1000, // 15分
-    max: 10, // 15分あたり10回まで
+    max: authRateLimitMax,
     message: {
       error: 'rate_limit_exceeded',
       message: '認証試行回数が多すぎます。',
@@ -100,8 +111,8 @@ export function createApp(): Express {
     legacyHeaders: false,
   });
 
-  app.use(express.json());
-  app.use(express.urlencoded({ extended: true }));
+  app.use(express.json({ limit: '1mb' }));
+  app.use(express.urlencoded({ limit: '1mb', extended: true }));
 
   // ヘルスチェック（認証不要）
   app.use('/health', healthRouter);
@@ -117,10 +128,10 @@ export function createApp(): Express {
   app.use('/api/companies', companiesRouter);
   app.use('/api/agents', agentsRouter);
   app.use('/api/issues', issuesRouter);
-  app.use('/api/goals', goalsRouter);
   app.use('/api/projects', projectsRouter);
   app.use('/api/costs', costsRouter);
   app.use('/api/routines', routinesRouter);
+  app.use('/api/jobs', jobsRouter);
   app.use('/api/approvals', approvalsRouter);
   app.use('/api/activity', activityRouter);
   app.use('/api/plugins', pluginsRouter);
@@ -131,6 +142,16 @@ export function createApp(): Express {
   app.use('/api/session-summaries', sessionSummariesRouter);
   app.use('/api/session-context', sessionContextRouter);
   app.use('/api/note-articles', noteArticlesRouter);
+  app.use('/api/memories', memoriesRouter);
+  app.use('/api/recipes', recipesRouter);
+  app.use('/api/playbooks', playbooksRouter);
+  app.use('/api/artifacts', artifactsRouter);
+  app.use('/api/analytics', analyticsRouter);
+  app.use('/api/webhooks', webhooksRouter);
+  app.use('/api/notifications', notificationsRouter);
+  app.use('/api/search', searchRouter);
+  app.use('/api/user', userRouter);
+  app.use('/api/plane', planeRouter);
 
   // 404ハンドラ（未定義ルートへのリクエストをJSON形式で返す）
   app.use((_req, res) => {

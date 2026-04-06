@@ -165,16 +165,39 @@ describe('GET /api/tasks', () => {
 
   // UT-07: 一覧取得
   it('UT-07: 一覧取得で200とdata配列を返す', async () => {
-    const db = makeDb();
-    // 1回目の limit: ownedAgents 取得 → [MOCK_AGENT]
-    // 2回目の limit: sessions → limit().offset() チェーン
-    db.limit
-      .mockResolvedValueOnce([MOCK_AGENT])
-      .mockReturnValueOnce({
-        offset: vi.fn().mockResolvedValue([
-          { id: 'session-001', agent_id: 'agent-001', status: 'completed' },
-        ]),
-      });
+    const sessions = [
+      { id: 'session-001', agent_id: 'agent-001', status: 'completed' },
+    ];
+    // GET /api/tasks の DB チェーン:
+    //   1回目: select().from().where() → ownedAgents (Promise<array>)
+    //   2回目: select().from().where().limit().offset() → sessions (Promise<array>)
+    let callCount = 0;
+    const mockWhere = vi.fn().mockImplementation(() => {
+      callCount++;
+      if (callCount === 1) {
+        // ownedAgents クエリ: .where() で直接解決
+        return Promise.resolve([{ id: 'agent-001' }]);
+      }
+      // sessions クエリ: .where().limit().offset() チェーン
+      return {
+        limit: vi.fn().mockReturnValue({
+          offset: vi.fn().mockResolvedValue(sessions),
+        }),
+      };
+    });
+
+    const db = {
+      select: vi.fn().mockReturnThis(),
+      from: vi.fn().mockReturnThis(),
+      where: mockWhere,
+      limit: vi.fn().mockReturnThis(),
+      offset: vi.fn().mockReturnThis(),
+      insert: vi.fn().mockReturnThis(),
+      values: vi.fn().mockReturnThis(),
+      returning: vi.fn().mockResolvedValue([]),
+      update: vi.fn().mockReturnThis(),
+      set: vi.fn().mockReturnThis(),
+    };
     vi.mocked(getDb).mockReturnValue(db as unknown as ReturnType<typeof getDb>);
 
     const res = await request(app)

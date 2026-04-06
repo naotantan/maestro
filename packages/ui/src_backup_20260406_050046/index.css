@@ -1,0 +1,152 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  /* ── Design Tokens ── */
+  :root {
+    /* Surface hierarchy */
+    --c-bg: #0b0f19;
+    --c-surface-0: #111827;
+    --c-surface-1: #1a2332;
+    --c-surface-2: #1f2b3d;
+    --c-surface-3: #263348;
+
+    /* Text hierarchy */
+    --c-text-primary: #f0f4f8;
+    --c-text-secondary: #94a3b8;
+    --c-text-tertiary: #64748b;
+    --c-text-muted: #475569;
+
+    /* Accent */
+    --c-accent: #38bdf8;
+    --c-accent-dim: rgba(56, 189, 248, 0.12);
+    --c-accent-hover: #7dd3fc;
+    --c-accent-text: #bae6fd;
+
+    /* Borders */
+    --c-border: rgba(148, 163, 184, 0.12);
+    --c-border-strong: rgba(148, 163, 184, 0.20);
+    --c-border-accent: rgba(56, 189, 248, 0.25);
+
+    /* Semantic */
+    --c-success: #34d399;
+    --c-success-dim: rgba(52, 211, 153, 0.12);
+    --c-warning: #fbbf24;
+    --c-warning-dim: rgba(251, 191, 36, 0.12);
+    --c-danger: #f87171;
+    --c-danger-dim: rgba(248, 113, 113, 0.12);
+    --c-info: #60a5fa;
+    --c-info-dim: rgba(96, 165, 250, 0.12);
+
+    /* Radius */
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 14px;
+    --radius-xl: 18px;
+
+    /* Shadow */
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.25);
+    --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.3);
+
+    /* Overlay */
+    --c-overlay: rgba(0, 0, 0, 0.6);
+
+    color-scheme: dark;
+  }
+
+  /* ── Light Mode ── */
+  body.light {
+    --c-bg: #f8fafc;
+    --c-surface-0: #ffffff;
+    --c-surface-1: #f1f5f9;
+    --c-surface-2: #e8ecf1;
+    --c-surface-3: #dde3ea;
+
+    --c-text-primary: #0f172a;
+    --c-text-secondary: #475569;
+    --c-text-tertiary: #64748b;
+    --c-text-muted: #94a3b8;
+
+    --c-accent: #0284c7;
+    --c-accent-dim: rgba(2, 132, 199, 0.08);
+    --c-accent-hover: #0369a1;
+    --c-accent-text: #0c4a6e;
+
+    --c-border: rgba(15, 23, 42, 0.08);
+    --c-border-strong: rgba(15, 23, 42, 0.14);
+    --c-border-accent: rgba(2, 132, 199, 0.25);
+
+    --c-success: #059669;
+    --c-success-dim: rgba(5, 150, 105, 0.08);
+    --c-warning: #d97706;
+    --c-warning-dim: rgba(217, 119, 6, 0.08);
+    --c-danger: #dc2626;
+    --c-danger-dim: rgba(220, 38, 38, 0.08);
+    --c-info: #2563eb;
+    --c-info-dim: rgba(37, 99, 235, 0.08);
+
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.06);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+    --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.1);
+
+    --c-overlay: rgba(0, 0, 0, 0.3);
+
+    color-scheme: light;
+  }
+
+  body {
+    background: var(--c-bg);
+    color: var(--c-text-primary);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+
+  button { outline: none; }
+  input, textarea, select { outline: none; }
+
+  ::selection {
+    background: var(--c-accent-dim);
+    color: var(--c-accent);
+  }
+}
+
+@layer components {
+  /* ── Surface containers ── */
+  .surface-0 {
+    background: var(--c-surface-0);
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-lg);
+  }
+  .surface-1 {
+    background: var(--c-surface-1);
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-lg);
+  }
+  .surface-inset {
+    background: var(--c-surface-1);
+    border-radius: var(--radius-md);
+  }
+
+  /* ── Text utility ── */
+  .text-primary { color: var(--c-text-primary); }
+  .text-secondary { color: var(--c-text-secondary); }
+  .text-tertiary { color: var(--c-text-tertiary); }
+  .text-muted { color: var(--c-text-muted); }
+  .text-accent { color: var(--c-accent); }
+
+  /* ── Legacy compat gradient ── */
+  .gradient-text {
+    background: linear-gradient(135deg, var(--c-accent), var(--c-accent-hover));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+}

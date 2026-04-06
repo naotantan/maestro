@@ -1,5 +1,5 @@
 import {
-  pgTable, text, varchar, boolean, timestamp, uuid, json, index
+  pgTable, text, varchar, boolean, timestamp, uuid, json, index, integer
 } from 'drizzle-orm/pg-core';
 import { companies } from './group-a';
 
@@ -7,8 +7,10 @@ import { companies } from './group-a';
 export const routines = pgTable('routines', {
   id: uuid('id').primaryKey().defaultRandom(),
   company_id: uuid('company_id').notNull().references(() => companies.id, { onDelete: 'cascade' }),
+  number: integer('number').notNull(),
   name: varchar('name', { length: 255 }).notNull(),
   description: text('description'),
+  prompt: text('prompt'),
   cron_expression: varchar('cron_expression', { length: 100 }).notNull(),
   enabled: boolean('enabled').default(true),
   created_at: timestamp('created_at').defaultNow(),
@@ -33,7 +35,26 @@ export const routine_runs = pgTable('routine_runs', {
   routine_id: uuid('routine_id').notNull().references(() => routines.id, { onDelete: 'cascade' }),
   executed_at: timestamp('executed_at').defaultNow(),
   status: varchar('status', { length: 20 }).default('success'),
+  result: text('result'),
   error_message: text('error_message'),
 }, (table) => ({
   idxRoutine: index('idx_runs_routine').on(table.routine_id),
+}));
+
+// F4: jobs — Claudeへの指示キュー
+export const jobs = pgTable('jobs', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  company_id: uuid('company_id').notNull().references(() => companies.id, { onDelete: 'cascade' }),
+  prompt: text('prompt').notNull(),
+  status: varchar('status', { length: 20 }).notNull().default('pending'),
+  result: text('result'),
+  error_message: text('error_message'),
+  plane_issue_id: varchar('plane_issue_id', { length: 255 }),
+  plane_issue_url: text('plane_issue_url'),
+  created_at: timestamp('created_at').defaultNow(),
+  started_at: timestamp('started_at'),
+  completed_at: timestamp('completed_at'),
+}, (table) => ({
+  idxCompany: index('idx_jobs_company').on(table.company_id),
+  idxStatus: index('idx_jobs_status').on(table.status),
 }));

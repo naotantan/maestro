@@ -11,7 +11,6 @@ import AgentsPage from './pages/agents/AgentsPage.tsx';
 import AgentDetailPage from './pages/agents/AgentDetailPage.tsx';
 import IssuesPage from './pages/issues/IssuesPage.tsx';
 import IssueDetailPage from './pages/issues/IssueDetailPage.tsx';
-import GoalsPage from './pages/goals/GoalsPage.tsx';
 import ProjectsPage from './pages/projects/ProjectsPage.tsx';
 import ProjectDetailPage from './pages/projects/ProjectDetailPage.tsx';
 import RoutinesPage from './pages/routines/RoutinesPage.tsx';
@@ -19,9 +18,23 @@ import ApprovalsPage from './pages/approvals/ApprovalsPage.tsx';
 import CostsPage from './pages/costs/CostsPage.tsx';
 import ActivityPage from './pages/ActivityPage.tsx';
 import SessionsPage from './pages/sessions/SessionsPage.tsx';
+import SessionDetailPage from './pages/sessions/SessionDetailPage.tsx';
+import UserProfilePage from './pages/profile/UserProfilePage.tsx';
+import BackupPage from './pages/settings/BackupPage.tsx';
+import OnboardingPage from './pages/onboarding/OnboardingPage.tsx';
+import SearchPage from './pages/search/SearchPage.tsx';
 import PluginsPage from './pages/plugins/PluginsPage.tsx';
 import SettingsPage from './pages/settings/SettingsPage.tsx';
 import OrgPage from './pages/org/OrgPage.tsx';
+import RecipesPage from './pages/recipes/RecipesPage.tsx';
+import PlaybooksPage from './pages/playbooks/PlaybooksPage.tsx';
+import ArtifactsPage from './pages/artifacts/ArtifactsPage.tsx';
+import JobsPage from './pages/jobs/JobsPage.tsx';
+import SkillsPage from './pages/skills/SkillsPage.tsx';
+import MemoryPage from './pages/memory/MemoryPage.tsx';
+import AnalyticsPage from './pages/analytics/AnalyticsPage.tsx';
+import WebhooksPage from './pages/webhooks/WebhooksPage.tsx';
+import NotificationsPage from './pages/notifications/NotificationsPage.tsx';
 import NotFoundPage from './pages/NotFoundPage.tsx';
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
@@ -41,6 +54,7 @@ export default function App() {
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
+        <Route path="/onboarding" element={<OnboardingPage />} />
         <Route
           path="/"
           element={
@@ -55,7 +69,6 @@ export default function App() {
           <Route path="agents/:id" element={<AgentDetailPage />} />
           <Route path="issues" element={<IssuesPage />} />
           <Route path="issues/:id" element={<IssueDetailPage />} />
-          <Route path="goals" element={<GoalsPage />} />
           <Route path="projects" element={<ProjectsPage />} />
           <Route path="projects/:id" element={<ProjectDetailPage />} />
           <Route path="routines" element={<RoutinesPage />} />
@@ -63,9 +76,22 @@ export default function App() {
           <Route path="costs" element={<CostsPage />} />
           <Route path="activity" element={<ActivityPage />} />
           <Route path="sessions" element={<SessionsPage />} />
+          <Route path="sessions/:id" element={<SessionDetailPage />} />
           <Route path="plugins" element={<PluginsPage />} />
+          <Route path="recipes" element={<RecipesPage />} />
+          <Route path="playbooks" element={<PlaybooksPage />} />
+          <Route path="artifacts" element={<ArtifactsPage />} />
           <Route path="org" element={<OrgPage />} />
           <Route path="settings" element={<SettingsPage />} />
+          <Route path="settings/backup" element={<BackupPage />} />
+          <Route path="profile" element={<UserProfilePage />} />
+          <Route path="search" element={<SearchPage />} />
+          <Route path="jobs" element={<JobsPage />} />
+          <Route path="skills" element={<SkillsPage />} />
+          <Route path="memory" element={<MemoryPage />} />
+          <Route path="analytics" element={<AnalyticsPage />} />
+          <Route path="webhooks" element={<WebhooksPage />} />
+          <Route path="notifications" element={<NotificationsPage />} />
         </Route>
         <Route path="*" element={<NotFoundPage />} />
       </Routes>

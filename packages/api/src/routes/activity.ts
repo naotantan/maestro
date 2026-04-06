@@ -1,5 +1,5 @@
 import { Router, type Router as RouterType } from 'express';
-import { getDb, activity_log, issues, goals, projects, agents } from '@maestro/db';
+import { getDb, activity_log, issues, goals, projects, agents, routines } from '@maestro/db';
 import { eq, desc, inArray } from 'drizzle-orm';
 
 export const activityRouter: RouterType = Router();
@@ -25,9 +25,10 @@ activityRouter.get('/', async (req, res, next) => {
     const goalIds    = rows.filter(r => r.entity_type === 'goal'    && r.entity_id).map(r => r.entity_id!);
     const projectIds = rows.filter(r => r.entity_type === 'project' && r.entity_id).map(r => r.entity_id!);
     const agentIds   = rows.filter(r => r.entity_type === 'agent'   && r.entity_id).map(r => r.entity_id!);
+    const routineIds = rows.filter(r => r.entity_type === 'routine' && r.entity_id).map(r => r.entity_id!);
 
     // 各テーブルからIDとname/title/identifierを取得
-    const [issueRows, goalRows, projectRows, agentRows] = await Promise.all([
+    const [issueRows, goalRows, projectRows, agentRows, routineRows] = await Promise.all([
       issueIds.length > 0
         ? db.select({ id: issues.id, title: issues.title, identifier: issues.identifier })
              .from(issues).where(inArray(issues.id, issueIds))
@@ -41,6 +42,9 @@ activityRouter.get('/', async (req, res, next) => {
       agentIds.length > 0
         ? db.select({ id: agents.id, name: agents.name }).from(agents).where(inArray(agents.id, agentIds))
         : [],
+      routineIds.length > 0
+        ? db.select({ id: routines.id, name: routines.name }).from(routines).where(inArray(routines.id, routineIds))
+        : [],
     ]);
 
     // ID → 表示名のマップを構築
@@ -49,6 +53,7 @@ activityRouter.get('/', async (req, res, next) => {
     for (const r of goalRows)    nameMap[r.id] = r.name;
     for (const r of projectRows) nameMap[r.id] = r.name;
     for (const r of agentRows)   nameMap[r.id] = r.name;
+    for (const r of routineRows) nameMap[r.id] = r.name;
 
     // entity_name と updated_fields を付与して返す
     const enriched = rows.map(r => {

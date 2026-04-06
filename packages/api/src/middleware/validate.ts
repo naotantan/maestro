@@ -31,9 +31,22 @@ export function isValidEmail(email: string): boolean {
 
 /**
  * パスワードの強度チェック
+ * 要件: 8〜128文字、大文字・小文字・数字をそれぞれ1文字以上含む
  */
-export function isStrongPassword(password: string): boolean {
-  return password.length >= 8 && password.length <= 128;
+export function isStrongPassword(password: string): { valid: boolean; message?: string } {
+  if (password.length < 8 || password.length > 128) {
+    return { valid: false, message: 'パスワードは8文字以上128文字以下で入力してください' };
+  }
+  if (!/[A-Z]/.test(password)) {
+    return { valid: false, message: '大文字を1文字以上含めてください' };
+  }
+  if (!/[a-z]/.test(password)) {
+    return { valid: false, message: '小文字を1文字以上含めてください' };
+  }
+  if (!/[0-9]/.test(password)) {
+    return { valid: false, message: '数字を1文字以上含めてください' };
+  }
+  return { valid: true };
 }
 
 /**

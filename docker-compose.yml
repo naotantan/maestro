@@ -35,8 +35,11 @@ services:
       PORT: 3000
       API_KEY_SALT: ${API_KEY_SALT:-changeme-salt}
       ENCRYPTION_KEY: ${ENCRYPTION_KEY:-0000000000000000000000000000000000000000000000000000000000000000}
+      ANTHROPIC_API_KEY: ""
     ports:
       - "3000:3000"
+    volumes:
+      - ${HOME}/.claude:/root/.claude
     networks:
       - maestro-network
     healthcheck:

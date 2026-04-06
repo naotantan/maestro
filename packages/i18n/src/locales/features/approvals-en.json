@@ -16,6 +16,7 @@
     "approverValue": "Approver: {{id}}",
     "approverRoleValue": "Role: {{role}}",
     "approverFallback": "No matching organization member record",
-    "notAvailable": "Unavailable"
+    "notAvailable": "Unavailable",
+    "statusFilter": "Filter by status"
   }
 }

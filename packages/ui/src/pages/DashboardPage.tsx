@@ -1,6 +1,8 @@
-import { useQuery } from 'react-query';
+import { useState } from 'react';
+import { useQuery, useQueryClient } from 'react-query';
 import { Link } from 'react-router-dom';
-import { Activity, ArrowRight, Bot, ClipboardList, ShieldCheck, Zap } from 'lucide-react';
+import { Activity, Bot, ClipboardList, Loader2, Send, Square, Zap } from 'lucide-react';
+import { clsx } from 'clsx';
 import { useTranslation } from '@maestro/i18n';
 import api from '../lib/api.ts';
 import { formatDate } from '../lib/date.ts';
@@ -12,6 +14,90 @@ import {
   EmptyState,
   Alert,
 } from '../components/ui';
+
+interface SkillUsageStat {
+  name: string;
+  count: number;
+  is_fallback?: boolean;
+}
+
+interface SkillUsageResponse {
+  data: SkillUsageStat[];
+  meta: { period: string; since: string; is_fallback?: boolean };
+}
+
+function SkillUsageChart({ period }: { period: '24h' | '7d' }) {
+  const label = period === '24h' ? '過去24時間' : '過去1週間';
+  const refetchInterval = period === '24h' ? 10 * 60 * 1000 : 3 * 60 * 60 * 1000;
+
+  const { data, isLoading } = useQuery<SkillUsageResponse>(
+    ['skillUsageStats', period],
+    () => api.get(`/plugins/usage-stats?period=${period}`).then(r => r.data),
+    { refetchInterval, staleTime: refetchInterval / 2 },
+  );
+
+  const stats = data?.data ?? [];
+  const isFallback = data?.meta?.is_fallback ?? false;
+  const displayLabel = isFallback ? '全期間' : label;
+  const maxCount = stats.reduce((m, s) => Math.max(m, s.count), 1);
+
+  return (
+    <Card>
+      <CardBody className="p-4 space-y-3">
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-semibold text-th-text">
+            {displayLabel} スキル使用 Top10
+            {isFallback && (
+              <span className="ml-1.5 text-[10px] font-normal text-th-warning bg-th-warning-dim px-1.5 py-0.5 rounded">
+                期間内データなし・全期間表示
+              </span>
+            )}
+          </h3>
+          <span className="text-[10px] text-th-text-4">
+            {period === '24h' ? '10分更新' : '3時間更新'}
+          </span>
+        </div>
+
+        {isLoading ? (
+          <div className="space-y-2">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="flex items-center gap-2">
+                <div className="h-3 rounded bg-th-surface-2 flex-1 animate-pulse" style={{ width: `${60 + i * 8}%` }} />
+              </div>
+            ))}
+          </div>
+        ) : stats.length === 0 ? (
+          <p className="text-xs text-th-text-4 py-4 text-center">この期間にスキル使用の記録がありません</p>
+        ) : (
+          <div className="space-y-1.5">
+            {stats.map((stat, i) => {
+              const pct = Math.round((stat.count / maxCount) * 100);
+              return (
+                <div key={stat.name} className="flex items-center gap-2 group">
+                  <span className="text-[10px] text-th-text-4 w-4 text-right flex-shrink-0">{i + 1}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between mb-0.5">
+                      <span className="text-xs text-th-text truncate max-w-[80%]" title={stat.name}>
+                        {stat.name}
+                      </span>
+                      <span className="text-xs font-bold text-th-accent flex-shrink-0 ml-1">{stat.count}</span>
+                    </div>
+                    <div className="h-1.5 rounded-full bg-th-surface-2 overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-th-accent transition-all duration-500"
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </CardBody>
+    </Card>
+  );
+}
 
 // GET /api/agents のレスポンス型
 interface Agent {
@@ -35,16 +121,6 @@ interface Issue {
   created_at: string;
 }
 
-// GET /api/approvals のレスポンス型
-interface Approval {
-  id: string;
-  issue_id: string;
-  approver_id: string;
-  status: string;
-  created_at: string;
-  decided_at?: string;
-}
-
 // GET /api/activity のレスポンス型
 interface ActivityLog {
   id: string;
@@ -59,10 +135,41 @@ interface ActivityLog {
 }
 
 const ACTION_LABEL: Record<string, string> = { create: '作成', update: '更新', delete: '削除' };
+const ACTION_STYLE: Record<string, string> = {
+  create: 'bg-th-success-dim text-th-success',
+  update: 'bg-th-accent-dim text-th-accent',
+  delete: 'bg-th-danger-dim text-th-danger',
+};
 const ENTITY_LABEL: Record<string, string> = {
   issue: '課題', goal: 'ゴール', project: 'プロジェクト',
-  agent: 'エージェント', routine: 'ルーティン', plugin: 'プラグイン',
+  agent: 'エージェント', routine: 'ルーティン', plugin: 'スキル',
+  memory: 'メモリ', approval: '承認',
 };
+
+function formatActivityMessage(activity: ActivityLog): string {
+  const entity = ENTITY_LABEL[activity.entity_type] ?? activity.entity_type;
+  const action = ACTION_LABEL[activity.action] ?? activity.action;
+  const name = activity.entity_name;
+
+  if (!name) {
+    // entity_nameがない場合（sync操作など）
+    if (activity.action === 'create' && activity.entity_type === 'plugin') {
+      return `スキルの一括同期を実行`;
+    }
+    return `${entity}を${action}`;
+  }
+
+  if (activity.action === 'create') {
+    return `${entity}「${name}」を${action}`;
+  }
+  if (activity.action === 'update' && activity.updated_fields?.length) {
+    return `${entity}「${name}」の ${activity.updated_fields.join(', ')} を更新`;
+  }
+  if (activity.action === 'delete') {
+    return `${entity}「${name}」を${action}`;
+  }
+  return `${entity}「${name}」を${action}`;
+}
 
 // AgentType → 表示名
 const AGENT_TYPE_LABEL: Record<string, string> = {
@@ -96,15 +203,15 @@ function ActiveSkillsByType({ agents }: { agents: Agent[] }) {
     <div className="space-y-2">
       {entries.map(([typeKey, { count, isApi }]) => (
         <div key={typeKey} className="flex items-center gap-2">
-          <span className="text-xs text-slate-200 flex-1 truncate">
+          <span className="text-xs text-th-text flex-1 truncate">
             {AGENT_TYPE_LABEL[typeKey] ?? typeKey}
           </span>
-          <span className={`text-xs px-1.5 py-0.5 rounded flex-shrink-0 whitespace-nowrap ${
-            isApi ? 'bg-violet-900 text-violet-300' : 'bg-sky-950 text-sky-400'
+          <span className={`text-xs px-1.5 py-0.5 rounded-th-sm flex-shrink-0 whitespace-nowrap ${
+            isApi ? 'bg-th-accent-dim text-th-accent' : 'bg-th-surface-2 text-th-text-3'
           }`}>
             {isApi ? 'API' : 'サブスク'}
           </span>
-          <span className="text-xs font-bold text-sky-400 w-4 text-right flex-shrink-0">{count}</span>
+          <span className="text-xs font-bold text-th-accent w-4 text-right flex-shrink-0">{count}</span>
         </div>
       ))}
     </div>
@@ -116,37 +223,167 @@ function StatCard({
   value,
   icon,
   detail,
-  color,
+  to,
 }: {
   label: string;
   value: number | string;
   icon: React.ReactNode;
   detail: string;
-  color: 'sky' | 'orange' | 'red' | 'emerald';
+  color?: string;
+  to?: string;
 }) {
-  const colorMap = {
-    sky: 'from-sky-600 to-sky-700 text-sky-100',
-    orange: 'from-orange-600 to-orange-700 text-orange-100',
-    red: 'from-red-600 to-red-700 text-red-100',
-    emerald: 'from-emerald-600 to-emerald-700 text-emerald-100',
+  const content = (
+    <CardBody className="flex items-start justify-between gap-4 p-4">
+      <div className="min-w-0">
+        <p className="mb-1 text-sm font-medium text-th-text-3">{label}</p>
+        <p className="text-4xl font-bold gradient-text">
+          {value}
+        </p>
+        <p className="mt-2 text-xs text-th-text-4">{detail}</p>
+      </div>
+      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-th border border-th-border bg-th-surface-1 text-th-text-4">
+        {icon}
+      </span>
+    </CardBody>
+  );
+
+  if (to) {
+    return (
+      <Link to={to} className="block">
+        <Card hoverable>{content}</Card>
+      </Link>
+    );
+  }
+
+  return <Card hoverable>{content}</Card>;
+}
+
+interface Job {
+  id: string;
+  prompt: string;
+  status: string;
+  result: string | null;
+  error_message: string | null;
+  created_at: string;
+}
+
+function JobPanel() {
+  const [prompt, setPrompt] = useState('');
+  const [sending, setSending] = useState(false);
+  const [jobError, setJobError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
+
+  const { data: recentJobs = [] } = useQuery<Job[]>(
+    'jobs',
+    () => api.get('/jobs?limit=5').then(r => r.data.data),
+    { refetchInterval: 5000 },
+  );
+
+  const handleSend = async () => {
+    if (!prompt.trim() || sending) return;
+    setSending(true);
+    setJobError(null);
+    try {
+      await api.post('/jobs', { prompt: prompt.trim() });
+      setPrompt('');
+      queryClient.invalidateQueries('jobs');
+    } catch {
+      setJobError('指示の送信に失敗しました。再度お試しください。');
+    } finally {
+      setSending(false);
+    }
   };
 
+  const handleStop = async (jobId: string) => {
+    try {
+      await api.patch(`/jobs/${jobId}`, { status: 'cancelled' });
+      queryClient.invalidateQueries('jobs');
+    } catch {
+      setJobError('ジョブの停止に失敗しました。');
+    }
+  };
+
+  const activeJob = recentJobs.find(j => j.status === 'pending' || j.status === 'running');
+
   return (
-    <Card hoverable>
-      <CardBody className="flex items-start justify-between gap-4 p-4">
-        <div className="min-w-0">
-          <p className="mb-1 text-sm font-medium text-slate-400">{label}</p>
-          <p className={`text-4xl font-bold bg-gradient-to-r ${colorMap[color]} bg-clip-text text-transparent`}>
-            {value}
-          </p>
-          <p className="mt-2 text-xs text-slate-500">{detail}</p>
+    <Card>
+      <CardBody className="p-4 space-y-4">
+        <h2 className="text-lg font-bold text-th-text">Claudeに指示</h2>
+
+        {jobError && <Alert variant="danger" message={jobError} onClose={() => setJobError(null)} />}
+
+        {/* 入力 */}
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={prompt}
+            onChange={(e) => setPrompt(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') handleSend(); }}
+            placeholder="指示を入力..."
+            disabled={sending || !!activeJob}
+            className="flex-1 bg-th-surface-1 border border-th-border rounded-th-md px-3 py-2 text-sm text-th-text placeholder-th-text-4 focus:outline-none focus:border-th-accent disabled:opacity-50"
+          />
+          {activeJob ? (
+            <button
+              onClick={() => handleStop(activeJob.id)}
+              className="shrink-0 inline-flex items-center gap-1.5 rounded-th-md border border-th-danger/30 bg-th-danger-dim px-4 py-2 text-sm font-medium text-th-danger hover:opacity-80 transition-colors"
+            >
+              <Square className="h-3.5 w-3.5" />
+              停止
+            </button>
+          ) : (
+            <button
+              onClick={handleSend}
+              disabled={!prompt.trim() || sending}
+              className="shrink-0 inline-flex items-center gap-1.5 rounded-th-md border border-th-accent/30 bg-th-accent-dim px-4 py-2 text-sm font-medium text-th-accent hover:opacity-80 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              {sending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
+              送信
+            </button>
+          )}
         </div>
-        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-slate-500">
-          {icon}
-        </span>
+
+        {/* 直近のジョブ */}
+        {recentJobs.length > 0 && (
+          <div className="space-y-2">
+            {recentJobs.slice(0, 3).map(job => (
+              <div key={job.id} className="rounded-th-md border border-th-border bg-th-surface-1 px-3 py-2.5">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-sm text-th-text-2 truncate flex-1">{job.prompt}</p>
+                  <span className={clsx(
+                    'shrink-0 text-[10px] font-medium rounded-full px-2 py-0.5',
+                    job.status === 'done' && 'bg-th-success-dim text-th-success',
+                    job.status === 'running' && 'bg-th-accent-dim text-th-accent',
+                    job.status === 'pending' && 'bg-th-warning-dim text-th-warning',
+                    job.status === 'error' && 'bg-th-danger-dim text-th-danger',
+                    job.status === 'cancelled' && 'bg-th-surface-2 text-th-text-4',
+                  )}>
+                    {job.status === 'running' && <Loader2 className="h-3 w-3 animate-spin inline mr-1" />}
+                    {job.status}
+                  </span>
+                </div>
+                {job.result && (
+                  <div className="mt-2 rounded-th-sm bg-th-surface-0 border border-th-border px-2.5 py-2">
+                    <p className="text-xs text-th-text-3 whitespace-pre-wrap leading-relaxed max-h-40 overflow-y-auto">{job.result}</p>
+                  </div>
+                )}
+                {job.error_message && (
+                  <p className="mt-1 text-xs text-th-danger">{job.error_message}</p>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
       </CardBody>
     </Card>
   );
+}
+
+interface AnalyticsOverview {
+  active_agents: number;
+  open_issues: number;
+  today_sessions: number;
+  total_skills: number;
 }
 
 export default function DashboardPage() {
@@ -167,16 +404,17 @@ export default function DashboardPage() {
     () => api.get('/issues').then((r) => r.data.data),
   );
 
-  // 承認待ち一覧
-  const { data: approvals, isLoading: approvalsLoading, error: approvalsError } = useQuery<Approval[]>(
-    'approvals-pending',
-    () => api.get('/approvals', { params: { status: 'pending' } }).then((r) => r.data.data),
-  );
-
   // 最近のアクティビティ（直近5件）
   const { data: activities, isLoading: activitiesLoading, error: activitiesError } = useQuery<ActivityLog[]>(
     'activity',
     () => api.get('/activity', { params: { limit: 5 } }).then((r) => r.data.data),
+  );
+
+  // ダッシュボード概要（本日セッション数・登録スキル数）
+  const { data: overview } = useQuery<AnalyticsOverview>(
+    'analytics-overview',
+    () => api.get('/analytics/overview').then((r) => r.data.data),
+    { refetchInterval: 5 * 60 * 1000, staleTime: 2 * 60 * 1000 },
   );
 
   // D-5修正: enabled === true のエージェント数をカウント
@@ -185,31 +423,28 @@ export default function DashboardPage() {
   // D-6修正: status !== 'done' の未完了Issue数をカウント
   const openIssues = (issues ?? []).filter((i) => i.status !== 'done').length;
 
-  // 承認待ち件数
-  const pendingApprovals = (approvals ?? []).length;
-
-  const isLoading = agentsLoading || issuesLoading || approvalsLoading || activitiesLoading;
-  const hasError = agentsError || issuesError || approvalsError || activitiesError;
+  const isLoading = agentsLoading || issuesLoading || activitiesLoading;
+  const hasError = agentsError || issuesError || activitiesError;
 
   if (isLoading)
     return (
       <div className="p-6 space-y-6 max-w-7xl mx-auto">
         <div className="space-y-2">
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-sky-400 to-sky-600 bg-clip-text text-transparent">
+          <h1 className="text-4xl font-bold gradient-text">
             {t('dashboard.title')}
           </h1>
-          <p className="max-w-2xl text-slate-400">
+          <p className="max-w-2xl text-th-text-3">
             {t('dashboard.subtitle')}
           </p>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 4 }).map((_, index) => (
             <Card key={index}>
               <CardBody className="space-y-3 p-4">
-                <div className="h-4 w-24 rounded bg-slate-700/80" />
-                <div className="h-10 w-16 rounded bg-slate-800" />
-                <div className="h-3 w-32 rounded bg-slate-800" />
+                <div className="h-4 w-24 rounded-th-sm bg-th-surface-2" />
+                <div className="h-10 w-16 rounded-th-sm bg-th-surface-1" />
+                <div className="h-3 w-32 rounded-th-sm bg-th-surface-1" />
               </CardBody>
             </Card>
           ))}
@@ -227,10 +462,10 @@ export default function DashboardPage() {
     return (
       <div className="p-6 space-y-6 max-w-7xl mx-auto">
         <div className="space-y-2">
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-sky-400 to-sky-600 bg-clip-text text-transparent">
+          <h1 className="text-4xl font-bold gradient-text">
             {t('dashboard.title')}
           </h1>
-          <p className="max-w-2xl text-slate-400">
+          <p className="max-w-2xl text-th-text-3">
             {t('dashboard.subtitle')}
           </p>
         </div>
@@ -242,7 +477,7 @@ export default function DashboardPage() {
               title={t('dashboard.loadFailed')}
               message={t('dashboard.loadFailedMessage')}
             />
-            <p className="text-sm text-slate-500">
+            <p className="text-sm text-th-text-4">
               {t('dashboard.loadFailedScope')}
             </p>
           </CardBody>
@@ -253,10 +488,10 @@ export default function DashboardPage() {
   return (
     <div className="p-6 space-y-6 max-w-7xl mx-auto">
       <div className="space-y-2">
-        <h1 className="text-4xl font-bold bg-gradient-to-r from-sky-400 to-sky-600 bg-clip-text text-transparent">
+        <h1 className="text-4xl font-bold gradient-text">
           {t('dashboard.title')}
         </h1>
-        <p className="max-w-2xl text-slate-400">
+        <p className="max-w-2xl text-th-text-3">
           {t('dashboard.subtitle')}
         </p>
       </div>
@@ -264,13 +499,13 @@ export default function DashboardPage() {
       {/* 統計カード */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* 稼働中スキル: 部署別グループ表示 */}
-        <div className="bg-slate-800 rounded-xl p-4 border border-slate-700 flex flex-col gap-3">
+        <div className="bg-th-surface-1 rounded-th p-4 border border-th-border flex flex-col gap-3">
           <div className="flex items-center justify-between">
-            <span className="text-sm text-slate-400">稼働中のスキル</span>
-            <span className="bg-slate-700 rounded-full p-1.5 text-slate-400"><Bot className="h-4 w-4" /></span>
+            <span className="text-sm text-th-text-3">稼働中のスキル</span>
+            <span className="bg-th-surface-2 rounded-full p-1.5 text-th-text-3"><Bot className="h-4 w-4" /></span>
           </div>
           {agentCount === 0 ? (
-            <p className="text-xs text-slate-500">稼働中のスキルなし</p>
+            <p className="text-xs text-th-text-4">稼働中のスキルなし</p>
           ) : (
             <ActiveSkillsByType agents={(agents ?? []).filter(a => a.enabled)} />
           )}
@@ -281,36 +516,36 @@ export default function DashboardPage() {
           icon={<ClipboardList className="h-5 w-5" />}
           detail={t('dashboard.incompleteIssuesDetail')}
           color="orange"
+          to="/issues"
         />
         <StatCard
-          label={t('dashboard.pendingApprovals')}
-          value={pendingApprovals}
-          icon={<ShieldCheck className="h-5 w-5" />}
-          detail={t('dashboard.pendingApprovalsDetail')}
-          color="red"
+          label="本日のセッション"
+          value={overview?.today_sessions ?? '-'}
+          icon={<Activity className="h-5 w-5" />}
+          detail="今日の作業セッション数"
         />
         <StatCard
-          label={t('dashboard.systemStatus')}
-          value={t('dashboard.systemStatusNormal')}
+          label="登録スキル数"
+          value={overview?.total_skills ?? '-'}
           icon={<Zap className="h-5 w-5" />}
-          detail={t('dashboard.systemStatusDetail')}
-          color="emerald"
+          detail="利用可能なスキル総数"
+          to="/skills"
         />
       </div>
 
-      {/* 承認待ちアラート */}
-      {pendingApprovals > 0 && (
-        <Alert
-          variant="warning"
-          title={t('dashboard.pendingAlertTitle')}
-          message={t('dashboard.pendingAlertMessage', { count: pendingApprovals })}
-        />
-      )}
+      {/* Claudeに指示 */}
+      <JobPanel />
+
+      {/* スキル使用頻度 Top10 */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <SkillUsageChart period="24h" />
+        <SkillUsageChart period="7d" />
+      </div>
 
       {/* 最近のアクティビティ */}
       <Card>
         <CardHeader>
-          <h2 className="text-xl font-bold">{t('dashboard.recentActivity')}</h2>
+          <h2 className="text-xl font-bold text-th-text">{t('dashboard.recentActivity')}</h2>
         </CardHeader>
         <CardBody>
           {(activities ?? []).length > 0 ? (
@@ -318,27 +553,15 @@ export default function DashboardPage() {
               {(activities ?? []).slice(0, 5).map((activity) => (
                 <div
                   key={activity.id}
-                  className="flex flex-col gap-2 rounded-lg p-3 transition-colors hover:bg-slate-700/30 md:flex-row md:items-center md:justify-between"
+                  className="flex items-center gap-3 rounded-th-md p-3 transition-colors hover:bg-th-surface-1"
                 >
-                  <div className="flex items-center gap-2 flex-1 min-w-0">
-                    <span className="flex-shrink-0 inline-block min-w-[3rem] text-center px-2 py-0.5 rounded text-xs font-medium whitespace-nowrap bg-slate-700 text-slate-300">
-                      {ACTION_LABEL[activity.action] ?? activity.action}
-                    </span>
-                    <span className="text-xs text-slate-500 flex-shrink-0">
-                      {ENTITY_LABEL[activity.entity_type] ?? activity.entity_type}
-                    </span>
-                    <div className="flex flex-col min-w-0">
-                      <span className="text-sm text-slate-200 truncate">
-                        {activity.entity_name ?? activity.entity_id ?? '—'}
-                      </span>
-                      {activity.updated_fields && activity.updated_fields.length > 0 && (
-                        <span className="text-xs text-slate-500 truncate">
-                          {activity.updated_fields.join(', ')} を変更
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  <span className="text-xs text-slate-500 flex-shrink-0">{formatDate(activity.created_at)}</span>
+                  <span className={`flex-shrink-0 inline-block min-w-[3rem] text-center px-2 py-0.5 rounded-th-sm text-xs font-medium whitespace-nowrap ${ACTION_STYLE[activity.action] ?? 'bg-th-surface-2 text-th-text-2'}`}>
+                    {ACTION_LABEL[activity.action] ?? activity.action}
+                  </span>
+                  <span className="text-sm text-th-text flex-1 min-w-0 truncate">
+                    {formatActivityMessage(activity)}
+                  </span>
+                  <span className="text-xs text-th-text-4 flex-shrink-0">{formatDate(activity.created_at)}</span>
                 </div>
               ))}
             </div>
@@ -352,35 +575,6 @@ export default function DashboardPage() {
         </CardBody>
       </Card>
 
-      {/* クイックアクション */}
-      <Card>
-        <CardHeader>
-          <h2 className="text-xl font-bold">{t('dashboard.quickActions')}</h2>
-        </CardHeader>
-        <CardBody className="flex flex-wrap gap-3">
-          <Link
-            to="/agents"
-            className="inline-flex items-center gap-2 rounded-lg bg-sky-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-sky-700"
-          >
-            <span>{t('dashboard.manageAgents')}</span>
-            <ArrowRight className="h-4 w-4" />
-          </Link>
-          <Link
-            to="/issues"
-            className="inline-flex items-center gap-2 rounded-lg bg-slate-700 px-4 py-2 text-sm font-medium text-slate-100 transition-colors hover:bg-slate-600"
-          >
-            <span>{t('dashboard.viewIssues')}</span>
-            <ArrowRight className="h-4 w-4" />
-          </Link>
-          <Link
-            to="/approvals"
-            className="inline-flex items-center gap-2 rounded-lg bg-slate-700 px-4 py-2 text-sm font-medium text-slate-100 transition-colors hover:bg-slate-600"
-          >
-            <span>{t('dashboard.viewApprovals')}</span>
-            <ArrowRight className="h-4 w-4" />
-          </Link>
-        </CardBody>
-      </Card>
     </div>
   );
 }

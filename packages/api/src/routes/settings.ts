@@ -3,6 +3,8 @@ import { getDb, companies } from '@maestro/db';
 import { eq } from 'drizzle-orm';
 import type { AgentType } from '@maestro/shared';
 import { isValidEmail } from '../middleware/validate';
+import { getGdriveAuthStatus } from '../services/gdrive.js';
+import { runBackup } from '../services/backup.js';
 
 export const settingsRouter: RouterType = Router();
 
@@ -115,6 +117,43 @@ function validateBackupConfig(backup: BackupConfig): string | null {
   return null;
 }
 
+// GET /api/settings/backup/gdrive/status — Google Drive 認証状態確認（ADC）
+settingsRouter.get('/backup/gdrive/status', async (_req, res, next) => {
+  try {
+    const connected = await getGdriveAuthStatus();
+    res.json({ data: { connected } });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /api/settings/backup/run — バックアップ即時実行
+settingsRouter.post('/backup/run', async (req, res, next) => {
+  try {
+    const db = getDb();
+    const rows = await db
+      .select({ settings: companies.settings })
+      .from(companies)
+      .where(eq(companies.id, req.companyId!))
+      .limit(1);
+
+    const settings = (rows[0]?.settings ?? {}) as Record<string, unknown>;
+    const backup = (settings.backup ?? {}) as Record<string, unknown>;
+
+    const result = await runBackup({
+      destinationType: (backup.destinationType as string) || 'local',
+      compression: backup.compression as string | undefined,
+      gdriveFolderId: backup.gdriveFolderId as string | undefined,
+      localPath: backup.localPath as string | undefined,
+      language: (settings.language as string) || 'ja',
+    });
+
+    res.json({ data: result });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // GET /api/settings — 組織設定取得
 settingsRouter.get('/', async (req, res, next) => {
   try {
@@ -137,14 +176,25 @@ settingsRouter.get('/', async (req, res, next) => {
   }
 });
 
+const VALID_LANGUAGES = ['ja', 'en'];
+
 // PATCH /api/settings — 組織設定更新
 settingsRouter.patch('/', async (req, res, next) => {
   try {
-    const { defaultAgentType, anthropicApiKey, backup } = req.body as {
+    const { defaultAgentType, anthropicApiKey, backup, language } = req.body as {
       defaultAgentType?: string;
       anthropicApiKey?: string;
       backup?: BackupConfig;
+      language?: string;
     };
+
+    if (language !== undefined && !VALID_LANGUAGES.includes(language)) {
+      res.status(400).json({
+        error: 'validation_failed',
+        message: `language が無効です。有効な値: ${VALID_LANGUAGES.join(', ')}`,
+      });
+      return;
+    }
 
     // バリデーション
     if (defaultAgentType && !VALID_AGENT_TYPES.includes(defaultAgentType as AgentType)) {
@@ -182,6 +232,7 @@ settingsRouter.patch('/', async (req, res, next) => {
 
     const updated: Record<string, unknown> = { ...current };
     if (defaultAgentType !== undefined) updated.defaultAgentType = defaultAgentType;
+    if (language !== undefined) updated.language = language;
     // anthropicApiKey が明示的に渡された場合のみ更新（空文字は削除）
     if (anthropicApiKey !== undefined) {
       if (anthropicApiKey === '') {
@@ -216,6 +267,101 @@ settingsRouter.patch('/', async (req, res, next) => {
         hasAnthropicApiKey: !!updated.anthropicApiKey,
       },
     });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /api/settings/plane — Plane 設定取得
+settingsRouter.get('/plane', async (req, res, next) => {
+  try {
+    const db = getDb();
+    const rows = await db
+      .select({ settings: companies.settings })
+      .from(companies)
+      .where(eq(companies.id, req.companyId!))
+      .limit(1);
+    const settings = (rows[0]?.settings ?? {}) as Record<string, unknown>;
+    const plane = (settings.plane ?? {}) as Record<string, string>;
+    res.json({
+      data: {
+        baseUrl: plane.baseUrl || 'http://localhost:8090',
+        workspaceSlug: plane.workspaceSlug || '',
+        projectId: plane.projectId || '',
+        apiToken: plane.apiToken ? '***masked***' : '',
+        hasApiToken: !!plane.apiToken,
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// PATCH /api/settings/plane — Plane 設定保存
+settingsRouter.patch('/plane', async (req, res, next) => {
+  try {
+    const { baseUrl, workspaceSlug, projectId, apiToken, adminEmail, adminPassword } = req.body as {
+      baseUrl?: string;
+      workspaceSlug?: string;
+      projectId?: string;
+      apiToken?: string;
+      adminEmail?: string;
+      adminPassword?: string;
+    };
+
+    const db = getDb();
+    const rows = await db
+      .select({ settings: companies.settings })
+      .from(companies)
+      .where(eq(companies.id, req.companyId!))
+      .limit(1);
+    const current = (rows[0]?.settings ?? {}) as Record<string, unknown>;
+    const currentPlane = (current.plane ?? {}) as Record<string, string>;
+
+    const updatedPlane: Record<string, string> = { ...currentPlane };
+    if (baseUrl !== undefined) updatedPlane.baseUrl = baseUrl;
+    if (workspaceSlug !== undefined) updatedPlane.workspaceSlug = workspaceSlug;
+    if (projectId !== undefined) updatedPlane.projectId = projectId;
+    if (apiToken !== undefined && apiToken !== '***masked***') {
+      if (apiToken === '') delete updatedPlane.apiToken;
+      else updatedPlane.apiToken = apiToken;
+    }
+    if (adminEmail !== undefined) {
+      if (adminEmail === '') delete updatedPlane.adminEmail;
+      else updatedPlane.adminEmail = adminEmail;
+    }
+    if (adminPassword !== undefined && adminPassword !== '***masked***') {
+      if (adminPassword === '') delete updatedPlane.adminPassword;
+      else updatedPlane.adminPassword = adminPassword;
+    }
+
+    await db
+      .update(companies)
+      .set({ settings: { ...current, plane: updatedPlane }, updated_at: new Date() })
+      .where(eq(companies.id, req.companyId!));
+
+    res.json({ data: { saved: true } });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /api/settings/claude-integration — Claude Code 連携用の設定情報を返す
+settingsRouter.get('/claude-integration', async (req, res, next) => {
+  try {
+    const dbUrl = process.env.DATABASE_URL ?? 'postgresql://maestro:changeme@127.0.0.1:5432/maestro';
+    const apiUrl = process.env.API_BASE_URL ?? 'http://localhost:3000';
+
+    const mcpConfig = {
+      mcpServers: {
+        'maestro-db': {
+          command: 'npx',
+          args: ['-y', '@modelcontextprotocol/server-postgres', dbUrl],
+        },
+      },
+    };
+
+    res.json({ data: { dbUrl, apiUrl, mcpConfig } });
   } catch (err) {
     next(err);
   }
