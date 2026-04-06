@@ -7,7 +7,7 @@ import {
   Activity, BarChart2, Bell, Bot, BookOpen, Brain, Briefcase,
   Building2, ChefHat, Clock, ExternalLink, FolderKanban,
   Gauge, Globe, LogOut, Menu, Package, Receipt, Search,
-  Settings, ShieldCheck, Sparkles, Wand2, Workflow, X, Zap,
+  Settings, ShieldCheck, Sparkles, Wand2, Workflow, X,
   type LucideIcon,
 } from 'lucide-react';
 import { CommandPalette } from './ui/CommandPalette.tsx';
@@ -48,7 +48,6 @@ function buildNavSections(planeUrl: string): NavSection[] { return [
     // ツール＆知識 — AIに使わせるリソース
     titleKey: 'layout.sectionTools',
     items: [
-      { to: '/skills', labelKey: 'nav.skillsPage', icon: Zap },
       { to: '/plugins', labelKey: 'nav.plugins', icon: Sparkles },
       { to: '/recipes', labelKey: 'nav.recipes', icon: ChefHat },
       { to: '/memory', labelKey: 'nav.memory', icon: Brain },
@@ -79,7 +78,7 @@ const mobilePrimaryNav = [
   { to: '/', labelKey: 'layout.home', icon: Gauge },
   { to: '/agents', labelKey: 'nav.agents', icon: Bot },
   { to: '/jobs', labelKey: 'nav.jobs', icon: Briefcase },
-  { to: '/skills', labelKey: 'nav.skillsPage', icon: Zap },
+  { to: '/plugins', labelKey: 'nav.plugins', icon: Sparkles },
   { to: '/settings', labelKey: 'nav.settings', icon: Settings },
 ];
 

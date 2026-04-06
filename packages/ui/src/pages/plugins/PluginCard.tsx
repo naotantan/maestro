@@ -171,15 +171,6 @@ export function PluginCard({
           <h3 className="font-semibold text-sm text-th-text truncate">{plugin.name}</h3>
           <div className="flex items-center gap-2 mt-0.5">
             <p className="text-th-text-4 text-xs">v{plugin.version}</p>
-            {(plugin.usage_count ?? 0) > 0 && (
-              <span className="text-xs text-th-text-4 flex items-center gap-1">
-                <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
-                </svg>
-                {plugin.usage_count}回使用
-                {lastUsed && <span className="text-th-text-4/60">・{lastUsed}</span>}
-              </span>
-            )}
           </div>
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
@@ -213,35 +204,41 @@ export function PluginCard({
         </div>
       </div>
 
-      {/* trigger_type バッジ + コマンド */}
-      <div className="flex items-center gap-2 flex-wrap">
-        {plugin.trigger_type === 'auto' ? (
-          <span className="inline-flex items-center gap-1 text-xs font-medium bg-th-success-dim text-th-success border border-th-success/20 rounded-th-sm px-2 py-0.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-th-success shrink-0" />
-            自動起動
-          </span>
-        ) : (
-          <span
-            className="inline-flex items-center gap-1.5 text-xs font-mono bg-th-accent-dim text-th-accent border border-th-accent/20 rounded-th-sm px-2 py-0.5 cursor-pointer hover:bg-th-accent/20 transition-colors"
-            onClick={(e) => {
-              e.stopPropagation();
-              // Use the skill name as-is (it should already be the directory/file name).
-              // Only strip characters that are truly invalid in a Claude Code slash command.
-              const invocationName = plugin.name.replace(/[^a-zA-Z0-9_.-]/g, '');
-              const cmd = `/${invocationName}`;
-              navigator.clipboard.writeText(cmd);
-              const el = e.currentTarget;
-              const orig = el.textContent;
-              el.textContent = 'コピーしました';
-              setTimeout(() => { if (el.textContent === 'コピーしました') el.textContent = orig; }, 1200);
-            }}
-            title="クリックでコピー"
-          >
-            <span className="w-1.5 h-1.5 rounded-full bg-th-accent shrink-0" />
-            /{plugin.name.replace(/[^a-zA-Z0-9_.-]/g, '')}
-            <CopyIcon />
-          </span>
-        )}
+      {/* trigger_type バッジ + コマンド + 使用回数 */}
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap">
+          {plugin.trigger_type === 'auto' ? (
+            <span className="inline-flex items-center gap-1 text-xs font-medium bg-th-success-dim text-th-success border border-th-success/20 rounded-th-sm px-2 py-0.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-th-success shrink-0" />
+              自動起動
+            </span>
+          ) : (
+            <span
+              className="inline-flex items-center gap-1.5 text-xs font-mono bg-th-accent-dim text-th-accent border border-th-accent/20 rounded-th-sm px-2 py-0.5 cursor-pointer hover:bg-th-accent/20 transition-colors"
+              onClick={(e) => {
+                e.stopPropagation();
+                const invocationName = plugin.name.replace(/[^a-zA-Z0-9_.-]/g, '');
+                const cmd = `/${invocationName}`;
+                navigator.clipboard.writeText(cmd);
+                const el = e.currentTarget;
+                const orig = el.textContent;
+                el.textContent = 'コピーしました';
+                setTimeout(() => { if (el.textContent === 'コピーしました') el.textContent = orig; }, 1200);
+              }}
+              title="クリックでコピー"
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-th-accent shrink-0" />
+              /{plugin.name.replace(/[^a-zA-Z0-9_.-]/g, '')}
+              <CopyIcon />
+            </span>
+          )}
+        </div>
+        <span className="text-xs text-th-text-4 flex items-center gap-1 shrink-0">
+          <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+          </svg>
+          {plugin.usage_count ?? 0}回使用
+        </span>
       </div>
 
       {/* 説明文 */}
@@ -266,8 +263,12 @@ export function PluginCard({
         </div>
       )}
 
-      {/* 詳細・お気に入りボタン */}
-      <div className="flex items-center gap-2 mt-auto pt-1">
+      {/* 最終使用日 + 詳細・お気に入りボタン */}
+      <div className="flex items-center justify-between gap-2 mt-auto pt-1 border-t border-th-border/40">
+        <span className="text-xs text-th-text-4">
+          最終使用: {lastUsed ?? '未使用'}
+        </span>
+        <div className="flex items-center gap-2">
         <button
           onClick={() => onShowDetail(plugin)}
           className="text-xs text-th-accent hover:text-th-accent/80 transition-colors"
@@ -286,6 +287,7 @@ export function PluginCard({
         >
           <StarIcon filled={favorites.has(plugin.id)} />
         </button>
+        </div>
       </div>
     </div>
   );
