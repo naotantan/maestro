@@ -710,7 +710,7 @@ pluginsRouter.post('/:id/generate-pitch', async (req, res, next) => {
   }
 });
 
-// GET /api/plugins/recommend?q=text&limit=5 — セマンティック検索でスキルを推薦
+// GET /api/plugins/recommend?q=text&limit=5&min_similarity=0.5 — セマンティック検索でスキルを推薦
 pluginsRouter.get('/recommend', async (req, res, next) => {
   try {
     const q = String(req.query.q ?? '').trim();
@@ -719,23 +719,26 @@ pluginsRouter.get('/recommend', async (req, res, next) => {
       return;
     }
     const limit = Math.min(Number(req.query.limit ?? 5), 20);
+    const minSimilarity = Math.max(0, Math.min(1, Number(req.query.min_similarity ?? 0.5)));
     const { embedQuery } = await import('../services/embedding.js');
     const vec = await embedQuery(q);
+    const vecStr = `[${vec.join(',')}]`;
     const db = getDb();
     // コサイン類似度で上位N件を取得（pgvector: 1 - cosine_distance）
     const rows = await db.execute(sql`
       SELECT
         id, name, description, description_translated, category,
         trigger_type, usage_count, last_used_at, enabled,
-        1 - (embedding <=> ${`[${vec.join(',')}]`}::vector) AS similarity
+        1 - (embedding <=> ${vecStr}::vector) AS similarity
       FROM plugins
       WHERE company_id = ${req.companyId!}
         AND enabled = true
         AND embedding IS NOT NULL
-      ORDER BY embedding <=> ${`[${vec.join(',')}]`}::vector
+        AND 1 - (embedding <=> ${vecStr}::vector) >= ${minSimilarity}
+      ORDER BY embedding <=> ${vecStr}::vector
       LIMIT ${limit}
     `);
-    res.json({ data: rows.rows });
+    res.json({ data: rows.rows, meta: { min_similarity: minSimilarity } });
   } catch (err) {
     next(err);
   }
